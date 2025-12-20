@@ -1,0 +1,18 @@
+name = "thamly-worker"
+main = "src/index.ts"
+compatibility_date = "2024-12-01"
+account_id = "3c40e1cbbf01460cb822f7b9705bacc3"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "thamly"
+database_id = "3d7133b7-68b1-4305-8801-7ef333f5e87d"
+
+[[durable_objects.bindings]]
+name = "DRAFT_ROOM"
+class_name = "DraftRoom"
+
+[[migrations]]
+tag = "v1"
+new_sqlite_classes = ["DraftRoom"]
+
