@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, Suspense } from "react"
+import { useEffect, useState, Suspense } from "react"
 import Link from "next/link"
 import Image from "next/image"
 import { useRouter, useSearchParams } from "next/navigation"
@@ -11,6 +11,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { GoogleAuthButton } from "@/components/auth/google-auth-button"
+import { useUserProfile } from "@/components/providers/user-provider"
 
 export default function LoginPage() {
   const router = useRouter()
@@ -21,6 +22,13 @@ export default function LoginPage() {
   const [password, setPassword] = useState("")
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState("")
+  const { user, loading: userLoading } = useUserProfile()
+
+  useEffect(() => {
+    if (!userLoading && user) {
+      router.replace(redirectTo)
+    }
+  }, [userLoading, user, router, redirectTo])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -37,8 +45,12 @@ export default function LoginPage() {
       return
     }
 
-    router.replace(redirectTo || "/drafts")
+    router.replace(redirectTo)
     router.refresh()
+  }
+
+  if (!userLoading && user) {
+    return null
   }
 
   return (

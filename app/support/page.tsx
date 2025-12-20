@@ -41,12 +41,6 @@ export default function SupportPage() {
             Our support team partners with creators, journalists, students, and teams to keep Thamly running smoothly.
             Email us, share your workspace ID, or book a walkthrough any time.
           </p>
-          <Button
-            asChild
-            className="mx-auto rounded-full bg-[#0f7a5c] px-8 py-3 text-sm font-semibold text-white shadow-lg shadow-[#0f7a5c]/30 hover:bg-[#0c6148]"
-          >
-            <Link href="/auth/sign-up">Start Writing Free</Link>
-          </Button>
         </section>
 
         <section className="mx-auto grid max-w-6xl gap-6 md:grid-cols-3">
