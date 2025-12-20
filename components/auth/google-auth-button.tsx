@@ -21,10 +21,7 @@ export function GoogleAuthButton({ nextParam }: GoogleAuthButtonProps) {
 
     try {
       const next = nextParam || searchParams.get("redirectTo") || searchParams.get("next") || "/drafts"
-      const siteUrl =
-        (typeof window !== "undefined" ? window.location.origin : "") ||
-        process.env.NEXT_PUBLIC_SITE_URL ||
-        ""
+      const siteUrl = typeof window !== "undefined" ? window.location.origin : ""
       const redirectTo = siteUrl ? `${siteUrl}/auth/callback?next=${encodeURIComponent(next)}` : undefined
 
       const { error } = await supabase.auth.signInWithOAuth({
