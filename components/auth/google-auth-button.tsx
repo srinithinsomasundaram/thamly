@@ -1,7 +1,7 @@
 "use client"
 
 import { useMemo, useState } from "react"
-import { useRouter, useSearchParams } from "next/navigation"
+import { useSearchParams } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { createClient } from "@/lib/supabase/client"
 
@@ -12,7 +12,6 @@ interface GoogleAuthButtonProps {
 export function GoogleAuthButton({ nextParam }: GoogleAuthButtonProps) {
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const router = useRouter()
   const searchParams = useSearchParams()
   const supabase = useMemo(() => createClient(), [])
 
@@ -21,11 +20,12 @@ export function GoogleAuthButton({ nextParam }: GoogleAuthButtonProps) {
     setError(null)
 
     try {
-      const next = nextParam || searchParams.get("next") || "/drafts"
-      const redirectTo =
-        typeof window !== "undefined"
-          ? `${window.location.origin}/auth/callback?next=${encodeURIComponent(next)}`
-          : undefined
+      const next = nextParam || searchParams.get("redirectTo") || searchParams.get("next") || "/drafts"
+      const siteUrl =
+        (typeof window !== "undefined" ? window.location.origin : "") ||
+        process.env.NEXT_PUBLIC_SITE_URL ||
+        ""
+      const redirectTo = siteUrl ? `${siteUrl}/auth/callback?next=${encodeURIComponent(next)}` : undefined
 
       const { error } = await supabase.auth.signInWithOAuth({
         provider: "google",
