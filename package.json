@@ -5,7 +5,7 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
-    "postbuild": "node scripts/fix-manifests.js",
+    "postbuild": "node scripts/fix-manifests.js && rm -rf .next/cache",
     "start": "next start",
     "lint": "next lint",
     "socket": "node scripts/socket-server.js"
