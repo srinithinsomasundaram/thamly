@@ -75,6 +75,17 @@ export default function SubscriptionUpgradePage() {
   const [showProfileDropdown, setShowProfileDropdown] = useState(false)
   const router = useRouter()
 
+  const requiredFieldsComplete = Boolean(
+    billingInfo.email &&
+    billingInfo.fullName &&
+    billingInfo.phone &&
+    billingInfo.address &&
+    billingInfo.city &&
+    billingInfo.state &&
+    billingInfo.postalCode &&
+    billingInfo.country
+  )
+
   useEffect(() => {
     const loadProfile = async () => {
       const supabase = createClient()
@@ -290,10 +301,13 @@ export default function SubscriptionUpgradePage() {
               <div className="inline-flex items-center gap-2 rounded-full border border-[#dfe9dd] bg-white px-4 py-2 text-xs font-semibold uppercase tracking-[0.3em] text-[#0f7a5c] shadow-sm shadow-[#dfe9dd]/50">
                 Upgrade
               </div>
-              <h1 className="text-4xl font-semibold sm:text-5xl">Start your 7-day Pro trial.</h1>
+              <h1 className="text-4xl font-semibold sm:text-5xl">
+                {trialUsed ? "Upgrade to Pro" : "Start your 7-day Pro trial."}
+              </h1>
               <p className="mx-auto max-w-3xl text-lg text-[#42584a]">
-                Tamil-first AI, faster rewrites, and teamwork ready for teams, students, and newsrooms. Trial runs 7 days,
-                then you can upgrade for just ₹399/mo—no surprise auto-renew, and you keep the remaining trial days.
+                {trialUsed
+                  ? "Tamil-first AI, faster rewrites, and teamwork for teams, students, and newsrooms. Your trial is used—upgrade for just ₹399/mo (₹3999/yr), no surprise auto-renew."
+                  : "Tamil-first AI, faster rewrites, and teamwork ready for teams, students, and newsrooms. Trial runs 7 days, then you can upgrade for just ₹399/mo—no surprise auto-renew, and you keep the remaining trial days."}
               </p>
               <div className="mx-auto flex w-fit items-center gap-2 rounded-full border border-[#dfe9dd] bg-white px-2 py-1 text-sm font-semibold text-[#0f2c21] shadow-sm">
                 <button
@@ -466,13 +480,11 @@ export default function SubscriptionUpgradePage() {
                     {(!trialUsed && !isPro) ? "₹ 0 (trial)" : `₹ ${billingCycle === "monthly" ? MONTHLY_PRICE : YEARLY_PRICE}`}
                   </span>
                 </div>
-                <div className="flex justify-between">
-                  <span>GST (0%)</span>
-                  <span>₹ 0</span>
-                </div>
-                <div className="flex justify-between text-[#0f7a5c]">
-                  <span>Discount</span>
-                  <span>– ₹ 0</span>
+                <div className="flex justify-between font-semibold text-[#0f2c21]">
+                  <span>Total</span>
+                  <span>
+                    {(!trialUsed && !isPro) ? "₹ 0" : `₹ ${billingCycle === "monthly" ? MONTHLY_PRICE : YEARLY_PRICE}`}
+                  </span>
                 </div>
               </div>
             </div>
@@ -551,7 +563,7 @@ export default function SubscriptionUpgradePage() {
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-semibold text-[#0f2c21]">Phone number (optional)</label>
+                  <label className="block text-sm font-semibold text-[#0f2c21]">Phone number</label>
                   <input
                     type="tel"
                     value={billingInfo.phone}
@@ -615,16 +627,21 @@ export default function SubscriptionUpgradePage() {
             <div className="border-t border-[#dfe9dd] bg-[#f7faf7] px-6 py-4">
               <button
                 onClick={() => {
-                  if (!billingInfo.email || !billingInfo.fullName) return
+                  if (!requiredFieldsComplete) return
                   setShowBillingForm(false)
                   setShowPreCheckout(true)
                 }}
-                disabled={!billingInfo.email || !billingInfo.fullName}
+                disabled={!requiredFieldsComplete}
                 className="w-full rounded-full bg-[#0f7a5c] px-4 py-3 text-sm font-semibold text-white shadow-md shadow-[#0f7a5c]/30 transition hover:bg-[#0c6148] disabled:cursor-not-allowed disabled:opacity-60"
               >
                 Continue to payment
               </button>
-              <p className="mt-3 text-center text-xs text-[#42584a]">
+              {!requiredFieldsComplete && (
+                <p className="mt-2 text-center text-xs text-[#c2410c]">
+                  Please complete all fields above to continue.
+                </p>
+              )}
+              <p className="mt-1 text-center text-xs text-[#42584a]">
                 By continuing, you agree to our Terms of Service and Privacy Policy
               </p>
             </div>

@@ -1,3 +1,5 @@
+import { geminiUrl } from "@/lib/gemini"
+
 export async function POST(request: Request) {
   try {
     const { text } = await request.json()
@@ -19,7 +21,7 @@ export async function POST(request: Request) {
 Provide a concise suggestion (1-2 sentences). If the text is fine, say "Text looks good!"`
 
     const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`,
+      geminiUrl(apiKey),
       {
         method: "POST",
         headers: {
@@ -44,9 +46,9 @@ Provide a concise suggestion (1-2 sentences). If the text is fine, say "Text loo
     )
 
     if (!response.ok) {
-      const errorData = await response.json()
+      const errorData = await response.json().catch(() => ({}))
       console.error("[v0] Gemini API error:", errorData)
-      throw new Error(`Gemini API error: ${response.statusText}`)
+      return Response.json({ analysis: "" }, { status: 503 })
     }
 
     const data = await response.json()

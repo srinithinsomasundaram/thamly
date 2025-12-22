@@ -3,13 +3,13 @@ import { NextResponse } from "next/server"
 
 import { USAGE_LIMITS } from "@/lib/constants"
 import { createClient } from "@/lib/supabase/server"
+import { geminiUrl } from "@/lib/gemini"
 
 type Mode = "standard" | "news" | "blog" | "academic" | "email"
 
 const ALLOWED_MODES: Mode[] = ["standard", "news", "blog", "academic", "email"]
 const MAX_INPUT_LENGTH = 1800
-
-const GEMINI_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent"
+const SUBSCRIPTION_ACTIVE_WINDOW_MS = 30 * 24 * 60 * 60 * 1000 // 30 days after last update
 
 function detectLanguage(text: string): "tam" | "eng" | "mixed" | "thanglish" {
   const tamilChars = (text.match(/[\u0B80-\u0BFF]/g) || []).length
@@ -123,7 +123,7 @@ export async function POST(req: Request) {
     // Fetch or initialize profile for usage tracking
     const { data: profileRow } = await supabase
       .from("profiles")
-      .select("id, subscription_tier, usage_count, usage_reset_at, email, trial_started_at, trial_ends_at, is_trial_active, trial_used")
+      .select("id, subscription_tier, subscription_status, subscription_updated_at, usage_count, usage_reset_at, email, trial_started_at, trial_ends_at, is_trial_active, trial_used")
       .eq("id", user.id)
       .maybeSingle()
 
@@ -154,12 +154,54 @@ export async function POST(req: Request) {
     const trialStart = profileRow?.trial_started_at ? new Date(profileRow.trial_started_at as any) : null
     const trialEnd = profileRow?.trial_ends_at ? new Date(profileRow.trial_ends_at as any) : null
     const now = new Date()
-    const trialActive =
+    const trialExpired = Boolean(trialEnd && now > trialEnd)
+    let trialActive =
       (profileRow as any)?.is_trial_active === true && trialEnd && now <= trialEnd
         ? true
         : Boolean((profileRow as any)?.trial_used && trialStart && trialEnd && now <= trialEnd && (profileRow?.subscription_tier || "free") !== "pro")
 
-    const limit = mapTierToLimit(profileRow?.subscription_tier, trialActive)
+    const subscriptionUpdatedAt = profileRow?.subscription_updated_at ? new Date(profileRow.subscription_updated_at as any) : null
+    const subscriptionEndsAt =
+      profileRow?.subscription_status === "active" && subscriptionUpdatedAt
+        ? new Date(subscriptionUpdatedAt.getTime() + SUBSCRIPTION_ACTIVE_WINDOW_MS)
+        : null
+    const subscriptionActive = Boolean(subscriptionEndsAt && subscriptionEndsAt >= now)
+
+    let normalizedTier = (profileRow?.subscription_tier || "free").toLowerCase()
+    const hasPaidSubscription = subscriptionActive || normalizedTier === "pro"
+    const needsTrialCleanup = trialExpired
+    const needsExpiredSubCleanup = normalizedTier === "pro" && !subscriptionActive
+
+    if (needsTrialCleanup || needsExpiredSubCleanup) {
+      trialActive = false
+      const updates: Record<string, any> = {
+        is_trial_active: false,
+        subscription_updated_at: (subscriptionUpdatedAt || new Date()).toISOString(),
+      }
+
+      if (needsTrialCleanup && hasPaidSubscription) {
+        normalizedTier = "pro"
+        updates.subscription_tier = "pro"
+        updates.subscription_status = "active"
+      } else if (needsTrialCleanup && !hasPaidSubscription) {
+        normalizedTier = "free"
+        updates.subscription_tier = "free"
+        updates.subscription_status = "inactive"
+      }
+
+      if (needsExpiredSubCleanup) {
+        normalizedTier = "free"
+        updates.subscription_tier = "free"
+        updates.subscription_status = "inactive"
+      }
+
+      const { error: stateUpdateError } = await supabase.from("profiles").update(updates).eq("id", user.id)
+      if (stateUpdateError) {
+        console.error("[Unified AI] failed to sync subscription state", stateUpdateError)
+      }
+    }
+
+    const limit = mapTierToLimit(normalizedTier, trialActive)
     if (Number.isFinite(limit) && usageCount >= limit) {
       return NextResponse.json(
         {
@@ -203,7 +245,7 @@ export async function POST(req: Request) {
     }
 
     const prompt = buildPrompt(text, mode, language)
-    const aiRes = await fetch(`${GEMINI_URL}?key=${apiKey}`, {
+    const aiRes = await fetch(geminiUrl(apiKey), {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({

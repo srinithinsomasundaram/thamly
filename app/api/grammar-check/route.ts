@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server"
+import { geminiUrl } from "@/lib/gemini"
 
 export async function POST(req: Request) {
   try {
@@ -22,7 +23,7 @@ Return in JSON: {"main": "corrected text", "alt": "alternate phrasing"}.
       })
     }
 
-    const requestUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${process.env.GEMINI_API_KEY}`
+    const requestUrl = geminiUrl(process.env.GEMINI_API_KEY)
 
     const response = await fetch(requestUrl, {
       method: "POST",
@@ -47,9 +48,9 @@ Return in JSON: {"main": "corrected text", "alt": "alternate phrasing"}.
     })
 
     if (!response.ok) {
-      const errorData = await response.json()
+      const errorData = await response.json().catch(() => ({}))
       console.error("[v0] Gemini API error:", errorData)
-      throw new Error(`Gemini API error: ${response.statusText}`)
+      return NextResponse.json({ error: "AI unavailable" }, { status: 503 })
     }
 
     const data = await response.json()

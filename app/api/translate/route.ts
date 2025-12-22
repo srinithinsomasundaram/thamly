@@ -1,5 +1,6 @@
 import { buildTranslationPrompt } from "../../../lib/ai/prompts"
 import { generateNewsEnhancements } from "../../../lib/ai/news-enhancer"
+import { geminiUrl } from "@/lib/gemini"
 import { createClient } from "@/lib/supabase/server"
 
 export async function POST(req: Request) {
@@ -51,7 +52,7 @@ export async function POST(req: Request) {
       })
     }
 
-    const requestUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`
+    const requestUrl = geminiUrl(apiKey)
     const prompt = buildTranslationPrompt(text, tone, mode)
 
     const geminiResponse = await fetch(requestUrl, {
@@ -77,9 +78,9 @@ export async function POST(req: Request) {
     })
 
     if (!geminiResponse.ok) {
-      const errorData = await geminiResponse.json()
+      const errorData = await geminiResponse.json().catch(() => ({}))
       console.error("Gemini API error:", errorData)
-      throw new Error(`API error: ${geminiResponse.status}`)
+      return Response.json({ error: "AI service unavailable" }, { status: 503 })
     }
 
     const data = await geminiResponse.json()

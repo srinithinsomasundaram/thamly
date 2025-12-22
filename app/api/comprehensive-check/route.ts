@@ -2,6 +2,7 @@ import { NextResponse } from "next/server"
 import { buildUnifiedPrompt } from "../../../lib/ai/prompts"
 import { generateNewsEnhancements } from "../../../lib/ai/news-enhancer"
 import { enhanceForNewsTone } from "../../../lib/ai/news-enhancer"
+import { geminiUrl } from "@/lib/gemini"
 
 export async function POST(req: Request) {
   try {
@@ -27,7 +28,7 @@ export async function POST(req: Request) {
 
     const prompt = buildUnifiedPrompt(text, tone, mode)
     const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${process.env.GEMINI_API_KEY}`,
+      geminiUrl(process.env.GEMINI_API_KEY),
       {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -39,7 +40,7 @@ export async function POST(req: Request) {
     )
 
     if (!response.ok) {
-      const err = await response.text()
+      const err = await response.text().catch(() => "")
       console.error("Gemini comprehensive-check error:", response.status, err)
       return NextResponse.json({ success: false, error: "AI request failed" }, { status: 500 })
     }

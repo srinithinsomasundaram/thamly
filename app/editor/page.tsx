@@ -40,7 +40,7 @@ interface CollaborationState {
   ownerId?: string
 }
 
-const COLLAB_ENABLED = true
+const COLLAB_ENABLED = false
 const MODE_STORAGE_KEY = "thamly_draft_modes"
 const MODE_SUPPORTED_FLAG_KEY = "thamly_mode_supported"
 
@@ -81,6 +81,21 @@ const isModeError = (error: any) => {
   return message.includes("mode") && message.includes("column")
 }
 
+const deriveAvatar = (user: any, profile?: any) => {
+  const identities = (user?.identities as any[]) || []
+  const googleIdentity = identities.find((identity) => identity.provider === "google")
+  const googleData = (googleIdentity?.identity_data as any) || {}
+  const metadata = (user?.user_metadata as any) || {}
+  return (
+    profile?.avatar_url ||
+    googleData.picture ||
+    googleData.avatar_url ||
+    metadata.avatar_url ||
+    metadata.picture ||
+    ""
+  )
+}
+
 function EditorContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
@@ -107,8 +122,6 @@ function EditorContent() {
   const [avatarUrl, setAvatarUrl] = useState<string>("")
   const [subscriptionTier, setSubscriptionTier] = useState<string>("free")
   const [userMetadata, setUserMetadata] = useState<any>(null)
-  const [showCollaborate, setShowCollaborate] = useState(false)
-  const [collabEmail, setCollabEmail] = useState("")
   const [isOwner, setIsOwner] = useState(false)
   const [collaboration, setCollaboration] = useState<CollaborationState>({ status: "none" })
   const [collabBannerMessage, setCollabBannerMessage] = useState("")
@@ -165,7 +178,7 @@ function EditorContent() {
     }
   }
 
-  const readStreak = (): { lastDate?: string; days?: number } => {
+const readStreak = (): { lastDate?: string; days?: number } => {
     if (typeof window === "undefined") return {}
     try {
       const raw = localStorage.getItem(STREAK_KEY)
@@ -184,7 +197,13 @@ function EditorContent() {
     }
   }
 
-  const refreshCollaboration = useCallback(async (draftId: string) => {
+const refreshCollaboration = useCallback(async (draftId: string) => {
+    if (!COLLAB_ENABLED) {
+      setCollaboration({ status: "none" })
+      setCollabBannerMessage("")
+      setViewOnlyMessage("")
+      return
+    }
     try {
       const supabase = createClient()
       const { data: authData } = await supabase.auth.getUser()
@@ -300,6 +319,7 @@ function EditorContent() {
           setIsOwner(true)
           setUserEmail(user.email || "")
           setUserName((draftRow as any)?.full_name || user.email || "User")
+          setAvatarUrl(deriveAvatar(user))
 
       const { data: profileRow } = await (supabase as any)
         .from("profiles")
@@ -316,7 +336,7 @@ function EditorContent() {
           ? true
           : Boolean((profileRow as any)?.trial_used && trialStart && trialEnd && now <= trialEnd && tier !== "pro")
       setSubscriptionTier(trialActive ? "trial-pro" : tier)
-      setAvatarUrl(profileRow?.avatar_url || (user.user_metadata as any)?.avatar_url || "")
+      setAvatarUrl(deriveAvatar(user, profileRow))
       setLoading(false)
       return
         }
@@ -640,13 +660,19 @@ function EditorContent() {
 
   const downloadTextFile = (ext: string, mime: string) => {
     if (typeof window === "undefined") return
-    const blob = new Blob([content || ""], { type: mime })
+    if (!content?.trim()) {
+      toast({ title: "Add content to download", variant: "destructive" })
+      return
+    }
+    const blob = new Blob([content], { type: `${mime};charset=utf-8` })
     const url = URL.createObjectURL(blob)
     const a = document.createElement("a")
     a.href = url
     const safeTitle = (title || "document").trim() || "document"
     a.download = `${safeTitle}.${ext}`
+    document.body.appendChild(a)
     a.click()
+    a.remove()
     URL.revokeObjectURL(url)
   }
 
@@ -687,7 +713,9 @@ function EditorContent() {
     const safeTitle = (title || "document").trim() || "document"
     link.download = `${safeTitle}.png`
     link.href = canvas.toDataURL("image/png")
+    document.body.appendChild(link)
     link.click()
+    link.remove()
   }
 
   const handleDownload = (type: "pdf" | "png" | "word") => {
@@ -700,64 +728,38 @@ function EditorContent() {
     }
   }
 
-  const sendCollaboration = async () => {
-    if (!COLLAB_ENABLED) return
-    const targetEmail = collabEmail.trim().toLowerCase()
-    if (!targetEmail || !targetEmail.includes("@")) {
-      toast({ title: "Please enter a valid email", variant: "destructive" })
-      return
-    }
-    if (!isOwner) {
-      toast({ title: "Only the owner can invite editors", variant: "destructive" })
-      return
-    }
-
+  const handleCopyShareLink = async () => {
     const draftId = currentDraftId || await saveDraft()
     if (!draftId) {
       toast({ title: "Save your draft first", variant: "destructive" })
       return
     }
-
+    const origin =
+      typeof window !== "undefined"
+        ? window.location.origin
+        : process.env.NEXT_PUBLIC_SITE_URL || ""
+    const link = origin ? `${origin}/editor?id=${draftId}` : ""
+    if (!link) {
+      toast({ title: "Unable to build share link", variant: "destructive" })
+      return
+    }
     try {
-      const res = await fetch("/api/collab/invite", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ draft_id: draftId, email: targetEmail }),
-      })
-      const data = await res.json().catch(() => ({}))
-
-      if (!res.ok) {
-        if (data?.inviteLink) {
-          setCollaboration({ status: "pending", email: targetEmail, ownerId: userId })
-          setCollabBannerMessage(`Invite pending for ${targetEmail}`)
-        }
-        toast({
-          title: "Invite failed",
-          description: data?.inviteLink
-            ? `Email could not be sent. Share this link manually: ${data.inviteLink}`
-            : data?.error || "Unable to send invite",
-          variant: "destructive",
-        })
-        return
+      if (typeof navigator !== "undefined" && navigator.share) {
+        await navigator.share({ title: title || "Thamly Draft", url: link })
+        toast({ title: "Shared", description: "Draft link shared from your device." })
+      } else if (typeof navigator !== "undefined" && navigator.clipboard?.writeText) {
+        await navigator.clipboard.writeText(link)
+        toast({ title: "Link copied", description: "Invite teammates by sharing the link." })
+      } else {
+        // Fallback: prompt copy
+        window.prompt("Copy this link", link)
       }
-
-      setCollaboration({ status: "pending", email: targetEmail, ownerId: userId })
-      setCollabBannerMessage(`Invite pending for ${targetEmail}`)
-      toast({
-        title: "Invitation sent",
-        description: data?.inviteLink ? `Share this link: ${data.inviteLink}` : `Shared editing invite sent to ${targetEmail}`,
-      })
-      await refreshCollaboration(draftId)
     } catch (err) {
-      console.error("Failed to send shared editing invite", err)
-      toast({
-        title: "Invite failed",
-        description: "Something went wrong sending the invite.",
-        variant: "destructive",
-      })
-    } finally {
-      setShowCollaborate(false)
-      setCollabEmail("")
+      console.error("Copy share link failed", err)
+      toast({ title: "Copy failed", description: "Could not copy link. Please copy manually.", variant: "destructive" })
+      if (typeof window !== "undefined") {
+        window.prompt("Copy this link", link)
+      }
     }
   }
 
@@ -880,44 +882,6 @@ function EditorContent() {
     window.addEventListener("keydown", handler)
     return () => window.removeEventListener("keydown", handler)
   }, [saveDraft])
-
-  const endCollaboration = async () => {
-    if (!COLLAB_ENABLED) return
-    if (!currentDraftId || !isOwner) return
-    try {
-      const res = await fetch("/api/collab/end", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ draft_id: currentDraftId }),
-      })
-      const data = await res.json().catch(() => ({}))
-      if (!res.ok) {
-        toast({
-          title: "Unable to end collaboration",
-          description: data?.error || "Only the owner can end collaboration.",
-          variant: "destructive",
-        })
-        return
-      }
-
-      setCollaboration((prev) => ({ ...prev, status: "ended" }))
-      setCollabBannerMessage("")
-      channelRef.current?.send({
-        type: "broadcast",
-        event: "collab_end",
-        payload: { draftId: currentDraftId },
-      })
-      await refreshCollaboration(currentDraftId)
-      toast({ title: "Collaboration ended" })
-    } catch (err) {
-      console.error("Failed to end collaboration", err)
-      toast({
-        title: "Unable to end collaboration",
-        description: "Please try again.",
-        variant: "destructive",
-      })
-    }
-  }
 
   // Real-time collaboration channel
   useEffect(() => {
@@ -1112,42 +1076,6 @@ function EditorContent() {
               <span className="text-[11px] font-semibold text-slate-800">
                 Usage: {subscriptionTier !== "free" ? "Unlimited" : `${usageCounts.total} checks`}
               </span>
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="outline" size="sm" className="gap-1 border-slate-200 text-slate-900 bg-white hover:bg-slate-50">
-                    Share
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-48 bg-slate-900 text-white border border-slate-800">
-                  <DropdownMenuItem
-                    className="gap-2 text-white focus:bg-slate-800"
-                    onSelect={(e) => {
-                      e.preventDefault()
-                      handleDownload("pdf")
-                    }}
-                  >
-                    Download PDF
-                  </DropdownMenuItem>
-                  <DropdownMenuItem
-                    className="gap-2 text-white focus:bg-slate-800"
-                    onSelect={(e) => {
-                      e.preventDefault()
-                      handleDownload("png")
-                    }}
-                  >
-                    Download PNG
-                  </DropdownMenuItem>
-                  <DropdownMenuItem
-                    className="gap-2 text-white focus:bg-slate-800"
-                    onSelect={(e) => {
-                      e.preventDefault()
-                      handleDownload("word")
-                    }}
-                  >
-                    Download Word
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
             </div>
             <div className="flex items-center gap-2">
               <Avatar className="h-9 w-9 border border-slate-200">

@@ -1,4 +1,34 @@
 import { type NextRequest, NextResponse } from "next/server"
+import { geminiUrl } from "@/lib/gemini"
+
+const TAMIL_CHAR_REGEX = /[\u0B80-\u0BFF]/
+
+function extractJsonArray(text: string) {
+  const match = text.match(/\[[\s\S]*\]/)
+  if (!match) return null
+  try {
+    const parsed = JSON.parse(match[0])
+    return Array.isArray(parsed) ? parsed : null
+  } catch {
+    return null
+  }
+}
+
+function filterTamilSuggestions(raw: any[]): string[] {
+  if (!Array.isArray(raw)) return []
+  const seen = new Set<string>()
+  const result: string[] = []
+  for (const item of raw) {
+    const val = typeof item === "string" ? item.trim() : ""
+    if (!val) continue
+    if (!TAMIL_CHAR_REGEX.test(val)) continue
+    if (seen.has(val)) continue
+    seen.add(val)
+    result.push(val)
+    if (result.length >= 4) break
+  }
+  return result
+}
 
 export async function POST(req: NextRequest) {
   try {
@@ -14,17 +44,25 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "API key not configured" }, { status: 500 })
     }
 
-    const prompt = `You are a Tamil transliteration engine. Convert this English/Thanglish word into the TOP 4 most common Tamil words that match this phonetic spelling.
+    const prompt = `You are a Tamil transliteration engine for live typing suggestions.
+Given an English/Thanglish input, return the 4 most probable single-word Tamil matches (Tamil script only).
 
-Return ONLY a valid JSON array with exactly 4 strings, nothing else. No markdown, no extra text.
+Rules:
+- Output ONLY a JSON array of up to 4 strings, no markdown or prose.
+- Each item must be Tamil script; no English, no Roman letters.
+- Prefer the most common everyday spelling; match the phonetics closely.
+- Keep each suggestion to 1-2 words max (no sentences).
 
-Example response format:
-["word1", "word2", "word3", "word4"]
+Examples:
+Input: vanakkam -> ["வணக்கம்","வணக்கம்","வாழ்த்துகள்","நன்றிகள்"]
+Input: sapadu -> ["சாப்பாடு","சோறு","உணவு","புசணம்"]
+Input: irukeengala -> ["இருக்கீங்களா","இருக்கிறீர்களா","சிறப்பா இருக்கீங்களா","நலமா இருக்கீங்களா"]
+Input: chennai metro -> ["சென்னை மெட்ரோ","சென்னை மெட்ரோ ரயில்","சென்னை ரெயில்","சென்னை நகர மெட்ரோ"]
 
-Word to convert: ${word}`
+Input word: ${word}`
 
     const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`,
+      geminiUrl(apiKey),
       {
         method: "POST",
         headers: {
@@ -41,7 +79,7 @@ Word to convert: ${word}`
             },
           ],
           generationConfig: {
-            temperature: 0.7,
+            temperature: 0.35,
             maxOutputTokens: 512,
           },
         }),
@@ -49,24 +87,17 @@ Word to convert: ${word}`
     )
 
     if (!response.ok) {
-      const errorData = await response.json()
+      const errorData = await response.json().catch(() => ({}))
       console.error("[v0] Gemini API error:", errorData)
-      throw new Error(`Gemini API error: ${response.statusText}`)
+      return NextResponse.json({ suggestions: [], error: "AI unavailable" }, { status: 503 })
     }
 
     const data = await response.json()
     const responseText = data.candidates?.[0]?.content?.parts?.[0]?.text || ""
 
     try {
-      let suggestions = JSON.parse(responseText)
-
-      // Ensure we always return exactly 4 suggestions or fewer if not available
-      if (Array.isArray(suggestions)) {
-        suggestions = suggestions.slice(0, 4)
-      } else {
-        suggestions = []
-      }
-
+      const parsed = extractJsonArray(responseText)
+      const suggestions = filterTamilSuggestions(parsed || [])
       return NextResponse.json({ suggestions })
     } catch (parseError) {
       console.error("[v0] Error parsing Gemini response:", parseError)
