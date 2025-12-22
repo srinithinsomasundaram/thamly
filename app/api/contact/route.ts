@@ -3,7 +3,8 @@
 import { NextResponse } from "next/server"
 import { sendEmail, isSmtpConfigured } from "@/lib/email/send-email"
 
-const RECIPIENT = process.env.CONTACT_TO || "srinithinoffl@gmail.com"
+// Default to team inbox if env not provided
+const RECIPIENT = process.env.CONTACT_TO || "hello@thamly.in"
 
 export async function POST(req: Request) {
   try {
