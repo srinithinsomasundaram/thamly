@@ -30,7 +30,7 @@ function extractBestFallback(text: string) {
     return bestMatch[1].trim()
   }
   // If response is missing the closing quote, grab everything after "best":
-  const looseMatch = cleaned.match(/"best"\s*:\s*"(.*)/)
+  const looseMatch = cleaned.match(/"best"\s*:\s*"([\s\S]*)/)
   if (looseMatch?.[1]) {
     return looseMatch[1].trim()
   }
@@ -69,7 +69,8 @@ export async function POST(req: Request) {
     const content = data.candidates?.[0]?.content?.parts?.[0]?.text || ""
 
     const parsed: any = extractJson(content)
-    const bestFallback = parsed?.best || extractBestFallback(content)
+    const bestFallbackRaw = parsed?.best || extractBestFallback(content)
+    const bestFallback = bestFallbackRaw && bestFallbackRaw.length > 6 ? bestFallbackRaw : text
     if (!parsed) {
       console.warn("[comprehensive-check] unstructured response, using fallback text")
     }
