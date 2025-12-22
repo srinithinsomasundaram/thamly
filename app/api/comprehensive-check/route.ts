@@ -25,7 +25,7 @@ function extractBestFallback(text: string) {
   if (!text) return ""
   const cleaned = text.replace(/```json/gi, "").replace(/```/g, "").trim()
   // Try to grab "best": "<text>"
-  const bestMatch = cleaned.match(/"best"\s*:\s*"([^"]+)/s)
+  const bestMatch = cleaned.match(/"best"\s*:\s*"([^"]+)/)
   if (bestMatch?.[1]) {
     return bestMatch[1].trim()
   }
