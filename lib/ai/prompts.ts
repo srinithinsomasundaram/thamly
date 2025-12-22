@@ -1,12 +1,28 @@
 // Prompt templates for Gemini usage across translation and unified checks
 
 const GLOBAL_CONSTRAINTS = `GLOBAL CONSTRAINTS (MANDATORY):
-- Output MUST be valid minified JSON only.
-- Do NOT use markdown, backticks, comments, or explanations outside JSON.
+- Output MUST be valid, minified JSON only.
+- Do NOT use markdown, backticks, emojis, bullets, or comments.
+- Do NOT include explanations outside JSON.
 - Do NOT include trailing commas.
-- Do NOT repeat input text unless required by schema.
-- If unsure, return the safest minimal valid output per schema.
-- Never hallucinate facts.`
+- Do NOT include system messages or apologies.
+- Do NOT repeat the input text unless explicitly required by schema.
+- NEVER output English words in Tamil fields.
+- NEVER mix scripts (Tamil + English).
+- If unsure, choose the safest minimal correction in proper Tamil.
+- Never hallucinate facts.
+- Prefer correctness and clarity over creativity.
+CRITICAL LANGUAGE RULES:
+- NEVER transliterate English or Tanglish letter-by-letter into Tamil.
+- NEVER produce outputs like "ணே", "ஸப்டிய", "ஹெண்", "யொஉர்".
+- Tanglish MUST be interpreted by meaning, not sound.
+- English sentences MUST be translated by meaning, not phonetics.
+- If output resembles phonetic mapping, it is INVALID.
+MIXED INPUT HANDLING:
+- Split sentences logically before translating.
+- Translate each sentence independently.
+- Rejoin with proper Tamil punctuation.
+- Preserve question marks and sentence boundaries.`
 
 export function buildTranslationPrompt(text: string, tone: string, mode: string = "standard") {
   const newsGuidance =
@@ -32,20 +48,40 @@ DECISION LOGIC:
 
 ${GLOBAL_CONSTRAINTS}
 
+SELF-CHECK BEFORE RESPONDING:
+- Verify output contains only Tamil Unicode characters.
+- Verify meaning matches the input.
+- If input is already correct Tamil, return it unchanged.
+
 Return ONLY this JSON:
 {
-  "translation": "Tamil output only",
+  "translation": "Pure Tamil output only",
   "tone": "${tone}",
-  "reason": "Brief English reason (max 10 words)"
+  "reason": "சுருக்கமான தமிழ் காரணம் (அதிகபட்சம் 6 சொற்கள்)"
 }
 
 Rules:
 - Never output partial Tamil or mixed scripts.
 - Never transliterate English words into Tamil letters.
 - Respect tone strictly.
+- Do not remove or shorten any part of the sentence. Only translate or improve English words. Keep Tamil text unchanged.
 
 Input:
 "${text}"
+
+FAILURE SAFETY:
+If you cannot fully comply with all rules,
+return a minimal valid JSON with:
+{
+  "translation": "${text}",
+  "tone": "${tone}",
+  "reason": "மொழி ஒருமைப்படுத்தப்பட்டது"
+}
+
+FINAL SELF-CHECK:
+- Does the output contain phonetic Tamil of English letters?
+- If yes, STOP and regenerate using meaning-based translation.
+- Output must read like native written Tamil.
 `.trim()
 }
 
@@ -53,33 +89,36 @@ export function buildUnifiedPrompt(text: string, tone: string, mode: string = "s
   const m = (mode || "standard").toLowerCase()
 
   if (m === "news") {
-    return `You are Thamly, a Tamil news rewrite assistant. Convert any input to neutral, factual Tamil news.
+    return `
+You are Thamly, a Tamil news rewrite assistant.
+
+TASK:
+Convert any input to neutral, factual Tamil news.
+
+RULES:
 - Structure: Location → Event → Time → Result/Impact
-- Tone: Neutral, factual, passive voice preferred; no slang or emotion
-- Numbers: Use compact numeric format (44 கி.மீ, ₹61,843 கோடி, 2 பேர், 25%)
-- Language: Formal Tamil (e.g., கூறப்பட்டுள்ளது, தெரிவிக்கப்பட்டுள்ளது), no spoken slang
-- Headlines: Short, noun-phrase when possible; avoid unnecessary "-கிறது/-ப்படுகிறது"
-- Error handling: If details missing, say "இதுகுறித்து விசாரணை நடைபெற்று வருகிறது."
-- Translation logic: English → Tamil news; Tanglish → meaningful Tamil (not letter-by-letter); casual Tamil → formal news Tamil
-- Cleanup: remove duplicate/looping phrases; fix proper nouns/initials; complete sentences; avoid unfinished claims
-- STRICT OUTPUT RULES:
-  - Output must be complete, grammatically finished Tamil sentences.
-  - No sentence fragments.
-  - Remove duplicated phrases automatically.
-  - If factual uncertainty exists, explicitly state: "இதுகுறித்து விசாரணை நடைபெற்று வருகிறது."
-  - Never exaggerate or add emotion.
+- Tone: Neutral, factual, passive voice
+- No slang or emotion
+- Use numeric shorthand (44 கி.மீ, ₹61,843 கோடி)
+
 ${GLOBAL_CONSTRAINTS}
 
-Return ONLY this JSON:
+Return ONLY valid JSON:
 {
-  "headline": "<Short crisp news headline in Tamil>",
-  "news": "<Full rewritten professional news article in Tamil>",
-  "caption": "<One short social caption in Tamil>",
-  "keywords": ["keyword1", "keyword2", "keyword3"]
+  "headline": "சுருக்கமான செய்தித் தலைப்பு",
+  "news": "முழுமையான செய்தி",
+  "caption": "சுருக்கமான விளக்கம்",
+  "keywords": ["சொல்1", "சொல்2"]
 }
 
-Input: "${text}"
-Tone: "${tone || "formal"}"`
+Input:
+"${text}"
+ 
+FINAL SELF-CHECK:
+- Does the output contain phonetic Tamil of English letters?
+- If yes, STOP and regenerate using meaning-based translation.
+- Output must read like native written Tamil.
+`.trim()
   }
 
   // News engine modes (translate, rewrite, tanglish, headline, caption, factual)
@@ -149,7 +188,12 @@ ${baseRules}
 
 ${block}
 
-Input: "${text}"`
+Input: "${text}"
+
+FINAL SELF-CHECK:
+- Does the output contain phonetic Tamil of English letters?
+- If yes, STOP and regenerate using meaning-based translation.
+- Output must read like native written Tamil.`
   }
 
   // Standard mode
@@ -167,11 +211,11 @@ Return ONLY this JSON:
 {
   "best": "Final corrected Tamil sentence only",
   "translation": "Tamil translation or empty string",
-  "grammar": "Short grammar fix note or empty string",
+  "grammar": "குறுகிய தமிழ் இலக்கண குறிப்பு அல்லது காலி",
   "tone": "${tone || "formal"}",
-  "spelling": "Short spelling fix note or empty string",
+  "spelling": "குறுகிய தமிழ் எழுத்துப்பிழை குறிப்பு அல்லது காலி",
   "score": 0,
-  "hint": "Short English rationale (max 8 words)"
+  "reason": "சுருக்கமான தமிழ் காரணம் (அதிகபட்சம் 6 சொற்கள்)"
 }
 
 RULES:
@@ -179,11 +223,29 @@ RULES:
 - Never invent facts.
 - Never output markdown.
 - If input is already correct, copy it to "best".
+- Do not remove or shorten any part of the sentence. Only translate or improve English words. Keep Tamil text unchanged.
 - Score logic:
-  90–100 → minor or no changes
-  70–89 → grammar/tone fixes
-  <70 → major correction
+  95–100 → no or very minor changes
+  80–94 → grammar or tone corrected
+  60–79 → translation or restructuring required
 
 Input:
-"${text}"`
+"${text}"
+
+FAILURE SAFETY:
+If you cannot fully comply with all rules,
+return a minimal valid JSON with:
+{
+  "best": "${text}",
+  "translation": "",
+  "grammar": "",
+  "tone": "${tone || "formal"}",
+  "spelling": "",
+  "score": 70,
+  "reason": "மொழி ஒருமைப்படுத்தப்பட்டது"
+}
+FINAL SELF-CHECK:
+- Does the output contain phonetic Tamil of English letters?
+- If yes, STOP and regenerate using meaning-based translation.
+- Output must read like native written Tamil.`
 }
