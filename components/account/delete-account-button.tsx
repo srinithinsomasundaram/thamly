@@ -27,7 +27,7 @@ export function DeleteAccountButton() {
         const body = await res.json().catch(() => ({}))
         throw new Error(body.error || "Failed to delete account")
       }
-      router.push("/auth/login")
+      router.push("/")
     } catch (err: any) {
       setError(err.message || "Failed to delete account")
     } finally {
