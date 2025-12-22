@@ -18,12 +18,22 @@ type GeminiResult = {
   candidates?: any[]
 }
 
+type GenerationConfig = {
+  temperature: number
+  topP: number
+  maxOutputTokens: number
+}
+
 export async function callGeminiWithFallback(
   prompt: string,
   apiKey: string,
-  generationConfig = defaultGenConfig,
+  generationConfig?: Partial<GenerationConfig>,
 ): Promise<{ data: GeminiResult; model: string }> {
   let lastError: any = null
+  const config: GenerationConfig = {
+    ...defaultGenConfig,
+    ...(generationConfig || {}),
+  }
 
   for (const model of GEMINI_FALLBACK_MODELS) {
     const url = `${BASE_URL}/${model}:generateContent?key=${apiKey}`
@@ -33,7 +43,7 @@ export async function callGeminiWithFallback(
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           contents: [{ parts: [{ text: prompt }] }],
-          generationConfig,
+          generationConfig: config,
         }),
       })
 
