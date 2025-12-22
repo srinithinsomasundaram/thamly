@@ -454,16 +454,11 @@ export default function Home() {
             <div className="flex flex-wrap justify-center gap-6 text-[#42584a]">
               <div className="flex items-center gap-3">
                 <Mail className="h-5 w-5 text-teal-600" />
-                <a href="mailto:support@thamly.app" className="hover:text-teal-600 transition-colors">
-                  support@thamly.app
+                <a href="mailto:hello@thamly.in" className="hover:text-teal-600 transition-colors">
+                  hello@thamly.in
                 </a>
               </div>
-              <div className="flex items-center gap-3">
-                <Phone className="h-5 w-5 text-teal-600" />
-                <a href="mailto:support@thamly.com" className="hover:text-teal-600 transition-colors">
-                  support@thamly.com
-                </a>
-              </div>
+          
             </div>
           </div>
         </section>
