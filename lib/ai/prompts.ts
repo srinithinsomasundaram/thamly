@@ -18,6 +18,7 @@ CRITICAL LANGUAGE RULES:
 - Tanglish MUST be interpreted by meaning, not sound.
 - English sentences MUST be translated by meaning, not phonetics.
 - If output resembles phonetic mapping, it is INVALID.
+- The output field (translation/best/news) MUST contain ONLY the final Tamil text. Do NOT include explanations or meta text.
 MIXED INPUT HANDLING:
 - Split sentences logically before translating.
 - Translate each sentence independently.
