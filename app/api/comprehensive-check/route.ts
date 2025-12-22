@@ -4,6 +4,24 @@ import { generateNewsEnhancements } from "../../../lib/ai/news-enhancer"
 import { enhanceForNewsTone } from "../../../lib/ai/news-enhancer"
 import { geminiUrl } from "@/lib/gemini"
 
+function extractJson(text: string) {
+  if (!text) return null
+  const cleaned = text.replace(/```json/gi, "").replace(/```/g, "").trim()
+  try {
+    return JSON.parse(cleaned)
+  } catch {
+    const match = cleaned.match(/\{[\s\S]*\}/)
+    if (match) {
+      try {
+        return JSON.parse(match[0])
+      } catch {
+        return null
+      }
+    }
+    return null
+  }
+}
+
 export async function POST(req: Request) {
   try {
     const { text, context = "", selectedWord = "", tone = "formal", mode = "standard" } = await req.json()
@@ -48,11 +66,8 @@ export async function POST(req: Request) {
     const data = await response.json()
     const content = data.candidates?.[0]?.content?.parts?.[0]?.text || ""
 
-    let parsed: any = null
-    try {
-      const match = content.match(/\{[\s\S]*\}/)
-      parsed = match ? JSON.parse(match[0]) : JSON.parse(content)
-    } catch (e) {
+    const parsed: any = extractJson(content)
+    if (!parsed) {
       console.error("Failed to parse comprehensive-check response:", content)
     }
 

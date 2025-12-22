@@ -1,4 +1,5 @@
 import { type NextRequest, NextResponse } from "next/server"
+import { geminiUrl } from "@/lib/gemini"
 
 export async function POST(request: NextRequest) {
   try {
@@ -15,7 +16,7 @@ export async function POST(request: NextRequest) {
     }
 
     const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key=${apiKey}`,
+      geminiUrl(apiKey),
       {
         method: "POST",
         headers: {
