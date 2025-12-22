@@ -157,8 +157,8 @@ export default function ContactPage() {
                 <Mail className="h-4 w-4 text-[#0f7a5c]" />
                 <div>
                   <p className="text-xs font-semibold uppercase tracking-[0.3em] text-[#0f7a5c]">Team inbox</p>
-                  <a href="mailto:hello@thamly.com" className="font-semibold text-[#0f2c21] hover:text-black">
-                    hello@thamly.com
+                  <a href="mailto:hello@thamly.in" className="font-semibold text-[#0f2c21] hover:text-black">
+                    hello@thamly.in
                   </a>
                 </div>
               </div>
@@ -170,6 +170,9 @@ export default function ContactPage() {
                 Response times
               </div>
               <p className="mt-2">We reply within one business day. For urgent issues, include your workspace ID.</p>
+              <p className="mt-2 text-xs text-[#0f7a5c]">
+                Messages are delivered via our SMTP gateway to hello@thamly.in.
+              </p>
             </div>
 
             <div className="rounded-[20px] border border-[#dfe9dd] bg-white px-4 py-3 text-sm text-[#42584a] shadow-inner shadow-[#dfe9dd]/50">
