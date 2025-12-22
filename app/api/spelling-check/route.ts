@@ -1,5 +1,5 @@
 import { type NextRequest, NextResponse } from "next/server"
-import { geminiUrl } from "@/lib/gemini"
+import { callGeminiWithFallback } from "@/lib/gemini"
 
 export async function POST(request: NextRequest) {
   try {
@@ -15,19 +15,8 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Gemini API key not configured" }, { status: 500 })
     }
 
-    const response = await fetch(
-      geminiUrl(apiKey),
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          contents: [
-            {
-              parts: [
-                {
-                  text: `You are an expert Tamil spelling checker. Analyze Tamil text for spelling errors ONLY.
+    const { data, model } = await callGeminiWithFallback(
+      `You are an expert Tamil spelling checker. Analyze Tamil text for spelling errors ONLY.
 
 For each spelling error found, provide:
 1. "word" - the misspelled word
@@ -48,25 +37,10 @@ Example format:
 Focus ONLY on spelling errors, not grammar. Return ONLY the JSON object.
 
 Text to check: "${text}"`,
-                },
-              ],
-            },
-          ],
-          generationConfig: {
-            temperature: 0.2,
-            maxOutputTokens: 1000,
-          },
-        }),
-      },
+      apiKey,
+      { temperature: 0.2, maxOutputTokens: 1000 },
     )
-
-    if (!response.ok) {
-      const errorBody = await response.text()
-      console.error("Gemini API error:", response.status, errorBody)
-      return NextResponse.json({ error: "AI service unavailable" }, { status: 503 })
-    }
-
-    const data = await response.json()
+    console.log("[spelling-check] model used:", model)
     const content = data.candidates?.[0]?.content?.parts?.[0]?.text
 
     if (!content) {

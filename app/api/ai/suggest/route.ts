@@ -1,6 +1,6 @@
 import { type NextRequest, NextResponse } from "next/server"
 
-import { geminiUrl } from "@/lib/gemini"
+import { callGeminiWithFallback } from "@/lib/gemini"
 
 export async function POST(request: NextRequest) {
   try {
@@ -42,38 +42,11 @@ suggestion2
 suggestion3
 suggestion4`
 
-    const response = await fetch(
-      geminiUrl(apiKey),
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          contents: [
-            {
-              parts: [
-                {
-                  text: prompt,
-                },
-              ],
-            },
-          ],
-          generationConfig: {
-            temperature: 0.7,
-            maxOutputTokens: 512,
-          },
-        }),
-      },
-    )
-
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}))
-      console.error("[v0] Gemini API error:", errorData)
-      return NextResponse.json({ error: "AI unavailable", suggestions: [] }, { status: 503 })
-    }
-
-    const data = await response.json()
+    const { data, model } = await callGeminiWithFallback(prompt, apiKey, {
+      temperature: 0.7,
+      maxOutputTokens: 512,
+    })
+    console.log("[ai/suggest] model used:", model)
     const responseText = data.candidates?.[0]?.content?.parts?.[0]?.text || ""
     const suggestions = responseText
       .split("\n")

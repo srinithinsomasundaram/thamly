@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server"
-import { geminiUrl } from "@/lib/gemini"
+import { callGeminiWithFallback } from "@/lib/gemini"
 
 export async function POST(req: Request) {
   try {
@@ -23,37 +23,11 @@ Return in JSON: {"main": "corrected text", "alt": "alternate phrasing"}.
       })
     }
 
-    const requestUrl = geminiUrl(process.env.GEMINI_API_KEY)
-
-    const response = await fetch(requestUrl, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        contents: [
-          {
-            parts: [
-              {
-                text: prompt,
-              },
-            ],
-          },
-        ],
-        generationConfig: {
-          temperature: 0.4,
-          maxOutputTokens: 300,
-        },
-      }),
+    const { data, model } = await callGeminiWithFallback(prompt, process.env.GEMINI_API_KEY, {
+      temperature: 0.4,
+      maxOutputTokens: 300,
     })
-
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}))
-      console.error("[v0] Gemini API error:", errorData)
-      return NextResponse.json({ error: "AI unavailable" }, { status: 503 })
-    }
-
-    const data = await response.json()
+    console.log("[grammar-check] model used:", model)
     const textOutput = data?.candidates?.[0]?.content?.parts?.[0]?.text || ""
 
     return NextResponse.json({ result: textOutput })

@@ -2,7 +2,7 @@ import { NextResponse } from "next/server"
 import { buildUnifiedPrompt } from "../../../lib/ai/prompts"
 import { generateNewsEnhancements } from "../../../lib/ai/news-enhancer"
 import { enhanceForNewsTone } from "../../../lib/ai/news-enhancer"
-import { geminiUrl } from "@/lib/gemini"
+import { callGeminiWithFallback } from "@/lib/gemini"
 
 function extractJson(text: string) {
   if (!text) return null
@@ -45,25 +45,11 @@ export async function POST(req: Request) {
     }
 
     const prompt = buildUnifiedPrompt(text, tone, mode)
-    const response = await fetch(
-      geminiUrl(process.env.GEMINI_API_KEY),
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          contents: [{ parts: [{ text: prompt }] }],
-          generationConfig: { temperature: 0.4, maxOutputTokens: 400 },
-        }),
-      },
-    )
-
-    if (!response.ok) {
-      const err = await response.text().catch(() => "")
-      console.error("Gemini comprehensive-check error:", response.status, err)
-      return NextResponse.json({ success: false, error: "AI request failed" }, { status: 500 })
-    }
-
-    const data = await response.json()
+    const { data, model } = await callGeminiWithFallback(prompt, process.env.GEMINI_API_KEY, {
+      temperature: 0.4,
+      maxOutputTokens: 400,
+    })
+    console.log("[comprehensive-check] model used:", model)
     const content = data.candidates?.[0]?.content?.parts?.[0]?.text || ""
 
     const parsed: any = extractJson(content)

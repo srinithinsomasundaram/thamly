@@ -1,6 +1,6 @@
 import { buildTranslationPrompt } from "../../../lib/ai/prompts"
 import { generateNewsEnhancements } from "../../../lib/ai/news-enhancer"
-import { geminiUrl } from "@/lib/gemini"
+import { callGeminiWithFallback } from "@/lib/gemini"
 import { createClient } from "@/lib/supabase/server"
 
 export async function POST(req: Request) {
@@ -52,38 +52,13 @@ export async function POST(req: Request) {
       })
     }
 
-    const requestUrl = geminiUrl(apiKey)
     const prompt = buildTranslationPrompt(text, tone, mode)
 
-    const geminiResponse = await fetch(requestUrl, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        contents: [
-          {
-            parts: [
-              {
-                text: prompt,
-              },
-            ],
-          },
-        ],
-        generationConfig: {
-          temperature: 0.5,
-          maxOutputTokens: 400,
-        },
-      }),
+    const { data, model } = await callGeminiWithFallback(prompt, apiKey, {
+      temperature: 0.5,
+      maxOutputTokens: 400,
     })
-
-    if (!geminiResponse.ok) {
-      const errorData = await geminiResponse.json().catch(() => ({}))
-      console.error("Gemini API error:", errorData)
-      return Response.json({ error: "AI service unavailable" }, { status: 503 })
-    }
-
-    const data = await geminiResponse.json()
+    console.log("[translate] model used:", model)
     const content = data.candidates?.[0]?.content?.parts?.[0]?.text || ""
 
     const jsonMatch = content.match(/\{[\s\S]*\}/)

@@ -3,7 +3,7 @@ import { NextResponse } from "next/server"
 
 import { USAGE_LIMITS } from "@/lib/constants"
 import { createClient } from "@/lib/supabase/server"
-import { geminiUrl } from "@/lib/gemini"
+import { callGeminiWithFallback } from "@/lib/gemini"
 
 type Mode = "standard" | "news" | "blog" | "academic" | "email"
 
@@ -245,22 +245,11 @@ export async function POST(req: Request) {
     }
 
     const prompt = buildPrompt(text, mode, language)
-    const aiRes = await fetch(geminiUrl(apiKey), {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        contents: [{ parts: [{ text: prompt }] }],
-        generationConfig: { temperature: 0.4, maxOutputTokens: 512 },
-      }),
+    const { data, model } = await callGeminiWithFallback(prompt, apiKey, {
+      temperature: 0.4,
+      maxOutputTokens: 512,
     })
-
-    if (!aiRes.ok) {
-      const errorData = await aiRes.json().catch(() => ({}))
-      console.error("[Unified AI] Gemini error", errorData)
-      return NextResponse.json({ error: "AI request failed" }, { status: 502 })
-    }
-
-    const data = await aiRes.json()
+    console.log("[ai/unified] model used:", model)
     const aiText = data?.candidates?.[0]?.content?.parts?.[0]?.text || ""
     const parsed = parseGeminiJson(aiText) || {}
 

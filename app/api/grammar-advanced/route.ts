@@ -1,5 +1,5 @@
 import { type NextRequest, NextResponse } from "next/server"
-import { geminiUrl } from "@/lib/gemini"
+import { callGeminiWithFallback } from "@/lib/gemini"
 
 export async function POST(request: NextRequest) {
   try {
@@ -15,19 +15,8 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Gemini API key not configured" }, { status: 500 })
     }
 
-    const response = await fetch(
-      geminiUrl(apiKey),
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          contents: [
-            {
-              parts: [
-                {
-                  text: `You are an expert Tamil grammar teacher who provides clear, educational corrections. 
+    const { data, model } = await callGeminiWithFallback(
+      `You are an expert Tamil grammar teacher who provides clear, educational corrections. 
 
 For each grammar error found, provide:
 1. "original" - the incorrect word/phrase
@@ -58,27 +47,12 @@ Provide detailed corrections with:
 - Clear explanations in Tamil about why it's wrong
 - Grammar rule names in Tamil (வினைச்சொல், புணர்ச்சி, etc.)
 - Simple "aha moment" explanations that make the rules clear
-
 Return ONLY the JSON object in the format specified.`,
-                },
-              ],
-            },
-          ],
-          generationConfig: {
-            temperature: 0.4,
-            maxOutputTokens: 2000,
-          },
-        }),
-      },
+      apiKey,
+      { temperature: 0.4, maxOutputTokens: 2000 },
     )
+    console.log("[grammar-advanced] model used:", model)
 
-    if (!response.ok) {
-      const errorBody = await response.text().catch(() => "")
-      console.error("Gemini API error:", response.status, errorBody)
-      return NextResponse.json({ error: "AI service unavailable" }, { status: 503 })
-    }
-
-    const data = await response.json()
     const content = data.candidates?.[0]?.content?.parts?.[0]?.text
 
     if (!content) {

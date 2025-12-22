@@ -1,4 +1,4 @@
-import { geminiUrl } from "@/lib/gemini"
+import { callGeminiWithFallback } from "@/lib/gemini"
 
 export async function POST(request: Request) {
   try {
@@ -54,38 +54,11 @@ Return ONLY valid JSON array. No markdown, no extra text:
 If there are no issues, return: []
 Important: Return ONLY the JSON array, nothing else.`
 
-    const response = await fetch(
-      geminiUrl(apiKey),
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          contents: [
-            {
-              parts: [
-                {
-                  text: prompt,
-                },
-              ],
-            },
-          ],
-          generationConfig: {
-            temperature: 0.7,
-            maxOutputTokens: 2000,
-          },
-        }),
-      },
-    )
-
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}))
-      console.error("[v0] Gemini API error:", errorData)
-      return Response.json({ error: "AI unavailable" }, { status: 503 })
-    }
-
-    const data = await response.json()
+    const { data, model } = await callGeminiWithFallback(prompt, apiKey, {
+      temperature: 0.7,
+      maxOutputTokens: 2000,
+    })
+    console.log("[analyze] model used:", model)
     const result = data.candidates?.[0]?.content?.parts?.[0]?.text || ""
 
     let suggestions = []

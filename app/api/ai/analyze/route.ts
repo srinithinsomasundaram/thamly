@@ -1,4 +1,4 @@
-import { geminiUrl } from "@/lib/gemini"
+import { callGeminiWithFallback } from "@/lib/gemini"
 
 export async function POST(request: Request) {
   try {
@@ -20,38 +20,11 @@ export async function POST(request: Request) {
 
 Provide a concise suggestion (1-2 sentences). If the text is fine, say "Text looks good!"`
 
-    const response = await fetch(
-      geminiUrl(apiKey),
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          contents: [
-            {
-              parts: [
-                {
-                  text: prompt,
-                },
-              ],
-            },
-          ],
-          generationConfig: {
-            temperature: 0.7,
-            maxOutputTokens: 256,
-          },
-        }),
-      },
-    )
-
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}))
-      console.error("[v0] Gemini API error:", errorData)
-      return Response.json({ analysis: "" }, { status: 503 })
-    }
-
-    const data = await response.json()
+    const { data, model } = await callGeminiWithFallback(prompt, apiKey, {
+      temperature: 0.7,
+      maxOutputTokens: 256,
+    })
+    console.log("[ai/analyze] model used:", model)
     const analysis = data.candidates?.[0]?.content?.parts?.[0]?.text?.trim() || ""
 
     return Response.json({ analysis })
