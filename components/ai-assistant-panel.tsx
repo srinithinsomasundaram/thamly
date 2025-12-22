@@ -5,6 +5,7 @@ import { CheckCircle, Wand2 } from "lucide-react"
 import { AISuggestionCard, type AISuggestion } from "@/components/ai-suggestion-card"
 import { getInstantSuggestions } from "@/lib/tamil-transliterator"
 import { generateNewsEnhancements } from "@/lib/ai/news-enhancer"
+import { sanitizeReason, REASONS, SAFE_TAMIL_REASON } from "@/lib/ai/output"
 import { useUserProfile } from "@/components/providers/user-provider"
 
 type UsageCounts = {
@@ -40,6 +41,50 @@ export function AIAssistantPanel({
   onUsageUpdate,
   defaultTone = "formal",
 }: AIAssistantPanelProps) {
+  const fallbackTranslate = (text: string) => {
+    const map: Record<string, string> = {
+      ok: "சரி",
+      fix: "சரிசெய்",
+      newer: "புதிய",
+      models: "மாடல்கள்",
+      model: "மாடல்",
+      good: "நன்று",
+      bad: "பிழை",
+    }
+    return text
+      .split(/\s+/)
+      .map((w) => map[w.toLowerCase()] ?? w)
+      .join(" ")
+      .trim()
+  }
+
+  const safeDefault = () => "இதை சிறப்பாக மாற்றுகிறேன்"
+  const reasonForType = (type?: AISuggestion["type"]) => {
+    if (type === "translation" || type === "news") return REASONS.TRANSLATION
+    if (type === "spelling" || type === "tamil-spelling") return REASONS.SPELLING
+    if (type === "grammar") return REASONS.GRAMMAR
+    return SAFE_TAMIL_REASON
+  }
+
+  const postJsonWithRetry = async (url: string, payload: any, timeoutMs = 4000) => {
+    for (let attempt = 0; attempt < 2; attempt++) {
+      const controller = new AbortController()
+      const timer = setTimeout(() => controller.abort(), timeoutMs)
+      try {
+        const res = await fetch(url, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+          signal: controller.signal,
+        })
+        clearTimeout(timer)
+        if (res.ok) return res
+      } catch {
+        clearTimeout(timer)
+      }
+    }
+    return null
+  }
   const [suggestions, setSuggestions] = useState<AISuggestion[]>([])
   const [loading, setLoading] = useState(false)
   const [liveTranslation, setLiveTranslation] = useState("")
@@ -296,19 +341,15 @@ export function AIAssistantPanel({
         const hasTamilInSelection = /[\u0B80-\u0BFF]/.test(selectedText)
 
         try {
-          const comprehensiveResponse = await fetch("/api/comprehensive-check", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              text: selectedText.trim(),
-              context: trimmedText,
-              selectedWord: wordAtCursor || "",
-              tone: selectedTone,
-              mode,
-            }),
+          const comprehensiveResponse = await postJsonWithRetry("/api/comprehensive-check", {
+            text: selectedText.trim(),
+            context: trimmedText,
+            selectedWord: wordAtCursor || "",
+            tone: selectedTone,
+            mode,
           })
 
-          if (comprehensiveResponse.ok) {
+          if (comprehensiveResponse?.ok) {
             const comprehensiveData = await comprehensiveResponse.json()
 
             if (comprehensiveData.success && comprehensiveData.result) {
@@ -332,7 +373,7 @@ export function AIAssistantPanel({
                   result.type === 'spelling' ? 'Spelling Correction' : 'Improvement',
             original: result.original,
             suggested: Array.isArray(result.suggestions) ? result.suggestions.join(", ") : result.suggestions || result.suggested || "",
-            reason: result.reason,
+            reason: sanitizeReason(result.reason) || reasonForType(mappedType),
           })
         }
       }
@@ -346,20 +387,20 @@ export function AIAssistantPanel({
                     title: "Daily limit reached",
                     original: selectedText.trim(),
                     suggested: "Free limit reached (30/day). Upgrade to continue AI rewrites.",
-                    reason: "Upgrade to continue today.",
+                    reason: sanitizeReason(),
                   })
                   // Skip making a request when over the limit
                   return
                 }
                 try {
-                  const translateResponse = await fetch("/api/translate", {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ text: selectedText.trim(), tone: selectedTone, mode: effectiveMode }),
+                  const translateResponse = await postJsonWithRetry("/api/translate", {
+                    text: selectedText.trim(),
+                    tone: selectedTone,
+                    mode: effectiveMode,
                   })
-                  if (translateResponse.ok) {
-                    const translateData = await translateResponse.json()
-                    let suggestedText = translateData.translation
+                  if (translateResponse?.ok) {
+                  const translateData = await translateResponse.json()
+                  let suggestedText = translateData.translation
 
                     // Apply news-specific enhancements if in news mode
                     if (effectiveMode === "news") {
@@ -373,16 +414,16 @@ export function AIAssistantPanel({
                       title: effectiveMode === "news" ? "News Rewrite" : "English to Tamil Translation",
                       original: selectedText.trim(),
                       suggested: suggestedText,
-                      reason: translateData.reason || (effectiveMode === "news" ? "News mode: neutral, factual rewrite." : `Translated to Tamil (${selectedTone}).`),
+                      reason: sanitizeReason(translateData.reason) || reasonForType("translation"),
                     })
-                  } else if (translateResponse.status === 403 && newsBlocked) {
+                  } else if (translateResponse?.status === 403 && newsBlocked) {
                     transformedSuggestions.push({
                       id: `translation-${Date.now()}`,
                       type: "translation",
                       title: "Upgrade required",
                       original: selectedText.trim(),
                       suggested: "News mode is Pro-only. Upgrade to unlock news rewrites.",
-                      reason: "Upgrade to Pro to use News mode.",
+                      reason: sanitizeReason() || reasonForType("translation"),
                     })
                   }
                 } catch (err) {
@@ -427,7 +468,7 @@ export function AIAssistantPanel({
                     title: "Tamil Spelling Correction",
                     original: spellingError.word,
                     suggested: spellingError.suggestions.join(", "),
-                    reason: spellingError.reason,
+                    reason: sanitizeReason(spellingError.reason) || reasonForType("spelling"),
                     position: spellingError.position,
                   })
                 }
@@ -456,13 +497,13 @@ export function AIAssistantPanel({
             const title = isThanglish ? "Thanglish to Tamil Translation" : "English to Tamil Translation"
             const textToTranslate = trimmedText.length > 500 ? trimmedText.substring(0, 500) + "..." : trimmedText
 
-            const translateResponse = await fetch("/api/translate", {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ text: textToTranslate, tone: selectedTone, mode }),
+            const translateResponse = await postJsonWithRetry("/api/translate", {
+              text: textToTranslate,
+              tone: selectedTone,
+              mode,
             })
 
-            if (translateResponse.ok) {
+            if (translateResponse?.ok) {
               const translateData = await translateResponse.json()
               let suggestedText = translateData.translation
 
@@ -473,12 +514,7 @@ export function AIAssistantPanel({
               }
 
               const reason =
-                translateData.reason ||
-                (mode === "news"
-                  ? "Rewritten for neutral, factual news tone."
-                  : isThanglish
-                    ? `Thanglish to Tamil conversion (${trimmedText.length > 500 ? 'partial due to length' : 'complete'})`
-                    : `English to Tamil translation (${trimmedText.length > 500 ? 'partial due to length' : 'complete'})`)
+                sanitizeReason(translateData.reason) || reasonForType(mode === "news" ? "news" : "translation")
 
               if (tryConsume("translation")) {
                 transformedSuggestions.push({
@@ -487,7 +523,7 @@ export function AIAssistantPanel({
                   title: mode === "news" ? "News Rewrite" : title,
                   original: trimmedText,
                   suggested: suggestedText,
-                  reason: reason,
+                  reason: reason || reasonForType(mode === "news" ? "news" : "translation"),
                   tone: mode === "news" ? "news" : translateData.tone,
                 })
               }
@@ -508,31 +544,54 @@ export function AIAssistantPanel({
       })
 
       // Fallback: suggest alternatives for single-word selections when nothing else matched
-      if (
+     if (
         selectedText &&
         selectedText.trim().split(/\s+/).length === 1 &&
         (selectedLang !== "tam" || !/[\u0B80-\u0BFF]/.test(selectedText))
       ) {
-        const altWords = buildAlternativeWords(selectedText.trim(), mode)
-        if (altWords.length > 0 && tryConsume("improvement")) {
-          const altSuggestion: AISuggestion = {
-            id: `alts-${Date.now()}`,
-            type: "improvement",
-            title: "Alternative wording",
-            original: selectedText.trim(),
-            suggested: altWords.join(", "),
-            reason: "Context-aware alternatives based on your sentence.",
-          }
-          const key = `${altSuggestion.type}-${altSuggestion.original}-${altSuggestion.suggested}`
-          uniqueMap.set(key, altSuggestion)
-        }
+        // Skip alternative wording cards per request
       }
 
-      const capped = Array.from(uniqueMap.values())
+      let finalSuggestions = Array.from(uniqueMap.values())
         .filter((suggestion) => (suggestion.suggested ?? "").trim().length > 0)
+        .map((s) => {
+          const original = (s.original || "").trim()
+          const suggested = (s.suggested || "").trim()
+          const tooShort =
+            original.length > 0 && suggested.length < Math.max(original.length * 0.6, original.length - 4)
+
+          if (tooShort) {
+            const mapped = original ? fallbackTranslate(original) : ""
+            const safest = mapped && mapped !== original ? mapped : safeDefault()
+            return {
+              ...s,
+              suggested: safest,
+              reason: reasonForType(s.type),
+            }
+          }
+          return s
+        })
         .slice(0, 5)
+
+      // Safety net: if selection exists and nothing came back, use deterministic fallback
+      if (selectedText && finalSuggestions.length === 0) {
+        const selection = selectedText.trim()
+        const mapped = fallbackTranslate(selection)
+        const safest = mapped !== selection ? mapped : safeDefault()
+        finalSuggestions = [
+          {
+            id: `fallback-${Date.now()}`,
+            type: "translation",
+            title: "Tamil rewrite",
+            original: selection,
+            suggested: safest,
+            reason: sanitizeReason(REASONS.TRANSLATION) || reasonForType("translation"),
+          },
+        ]
+      }
+
       if (mounted) {
-        setSuggestions(capped)
+        setSuggestions(finalSuggestions)
       }
       setLoading(false)
     }
@@ -612,7 +671,7 @@ export function AIAssistantPanel({
       title: mode === "news" ? "News Rewrite" : "Thanglish → Tamil (predefined)",
       original: input,
       suggested: joined,
-      reason: mode === "news" ? "News-mode rewrite using predefined phonetic mapping; AI will refine." : "Converted using predefined transliteration mappings; AI will refine if needed.",
+      reason: sanitizeReason(REASONS.TRANSLATION),
     }
   }
 
@@ -644,7 +703,7 @@ export function AIAssistantPanel({
         title: 'Live Translation',
         original: text,
         suggested: liveTranslation,
-        reason: `Real-time translation from English/Thanglish to Tamil (tone: ${selectedTone})`
+        reason: sanitizeReason(REASONS.TRANSLATION)
       })
       // Clear after applying - let the next text change trigger new translation
       setLiveTranslation("")
@@ -670,7 +729,7 @@ export function AIAssistantPanel({
         title: "English → Tamil",
         original: text.trim(),
         suggested: liveTranslation,
-        reason: `Auto-translated while you type (tone: ${selectedTone}).`,
+        reason: sanitizeReason(REASONS.TRANSLATION),
       }
     : null
 
