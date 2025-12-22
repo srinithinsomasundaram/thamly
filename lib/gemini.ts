@@ -1,5 +1,5 @@
-const GEMINI_MODEL = "gemini-1.5-flash"
-const BASE_URL = "https://generativelanguage.googleapis.com/v1/models"
+const GEMINI_MODEL = "gemini-1.5-flash-latest"
+const BASE_URL = "https://generativelanguage.googleapis.com/v1beta/models"
 
 export const geminiModel = GEMINI_MODEL
 
