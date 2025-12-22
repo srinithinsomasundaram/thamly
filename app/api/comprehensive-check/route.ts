@@ -24,10 +24,15 @@ function extractJson(text: string) {
 function extractBestFallback(text: string) {
   if (!text) return ""
   const cleaned = text.replace(/```json/gi, "").replace(/```/g, "").trim()
-  // Try to grab "best": "<text>"
-  const bestMatch = cleaned.match(/"best"\s*:\s*"([^"]+)/)
+  // Try to grab "best": "<text>" across lines
+  const bestMatch = cleaned.match(/"best"\s*:\s*"([\s\S]*?)"/)
   if (bestMatch?.[1]) {
     return bestMatch[1].trim()
+  }
+  // If response is missing the closing quote, grab everything after "best":
+  const looseMatch = cleaned.match(/"best"\s*:\s*"(.*)/)
+  if (looseMatch?.[1]) {
+    return looseMatch[1].trim()
   }
   // Fallback to cleaned text minus braces
   return cleaned.replace(/^{/, "").replace(/}$/, "").trim()
@@ -64,10 +69,10 @@ export async function POST(req: Request) {
     const content = data.candidates?.[0]?.content?.parts?.[0]?.text || ""
 
     const parsed: any = extractJson(content)
-    if (!parsed) {
-      console.error("Failed to parse comprehensive-check response:", content)
-    }
     const bestFallback = parsed?.best || extractBestFallback(content)
+    if (!parsed) {
+      console.warn("[comprehensive-check] unstructured response, using fallback text")
+    }
 
     // Handle different response formats based on mode
     if (mode === "news") {
