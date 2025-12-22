@@ -1,32 +1,52 @@
 // Prompt templates for Gemini usage across translation and unified checks
 
+const GLOBAL_CONSTRAINTS = `GLOBAL CONSTRAINTS (MANDATORY):
+- Output MUST be valid minified JSON only.
+- Do NOT use markdown, backticks, comments, or explanations outside JSON.
+- Do NOT include trailing commas.
+- Do NOT repeat input text unless required by schema.
+- If unsure, return the safest minimal valid output per schema.
+- Never hallucinate facts.`
+
 export function buildTranslationPrompt(text: string, tone: string, mode: string = "standard") {
   const newsGuidance =
     mode === "news"
-      ? `Mode: NEWS. Neutral, factual Tamil news. No slang/opinion. Prefer passive. Location → Event → Result. Avoid letter-by-letter transliteration. Use concise numbers (₹61,843 கோடி, 44 கி.மீ).`
-      : "Mode: STANDARD."
+      ? `Mode: NEWS.
+- Neutral, factual Tamil.
+- Passive voice preferred.
+- Structure: Location → Event → Result.
+- No opinion, no slang.
+- Numeric shorthand only (₹61,843 கோடி, 44 கி.மீ).`
+      : `Mode: STANDARD.`
 
-  return `You are a Tamil translation assistant. Choose the right action:
-- If the input is proper English, translate it to Tamil (no character-by-character mapping).
-- If it is Tamil written phonetically (Thanglish), render it in Tamil script.
-- If it is mixed, translate English parts and transliterate Tamil phonetic parts.
-- Respect the requested tone: formal | neutral | friendly | media/news.
+  return `
+You are a Tamil translation engine.
+
 ${newsGuidance}
 
-Return ONLY valid JSON:
+DECISION LOGIC:
+- English → Meaning-preserving Tamil translation.
+- Tanglish (phonetic Tamil) → Tamil script (not letter-by-letter).
+- Mixed → Translate English parts + transliterate Tamil phonetics.
+- Already-correct Tamil → Return as-is.
+
+${GLOBAL_CONSTRAINTS}
+
+Return ONLY this JSON:
 {
-  "translation": "Tamil output",
-  "reason": "short reason in English explaining translation choice and tone applied",
-  "tone": "<tone-used>"
+  "translation": "Tamil output only",
+  "tone": "${tone}",
+  "reason": "Brief English reason (max 10 words)"
 }
 
-Constraints:
-- Never output letter-by-letter Tamil (e.g., "how" ≠ "ஹொw").
-- Prefer meaning-preserving translation for English sentences.
-- Use culturally appropriate, respectful Tamil when tone=formal/media or mode=news.
+Rules:
+- Never output partial Tamil or mixed scripts.
+- Never transliterate English words into Tamil letters.
+- Respect tone strictly.
 
-Input: "${text}"
-Tone: "${tone}"`
+Input:
+"${text}"
+`.trim()
 }
 
 export function buildUnifiedPrompt(text: string, tone: string, mode: string = "standard") {
@@ -42,6 +62,13 @@ export function buildUnifiedPrompt(text: string, tone: string, mode: string = "s
 - Error handling: If details missing, say "இதுகுறித்து விசாரணை நடைபெற்று வருகிறது."
 - Translation logic: English → Tamil news; Tanglish → meaningful Tamil (not letter-by-letter); casual Tamil → formal news Tamil
 - Cleanup: remove duplicate/looping phrases; fix proper nouns/initials; complete sentences; avoid unfinished claims
+- STRICT OUTPUT RULES:
+  - Output must be complete, grammatically finished Tamil sentences.
+  - No sentence fragments.
+  - Remove duplicated phrases automatically.
+  - If factual uncertainty exists, explicitly state: "இதுகுறித்து விசாரணை நடைபெற்று வருகிறது."
+  - Never exaggerate or add emotion.
+${GLOBAL_CONSTRAINTS}
 
 Return ONLY this JSON:
 {
@@ -126,31 +153,37 @@ Input: "${text}"`
   }
 
   // Standard mode
-  return `You are Thamly, a Tamil writing assistant. Perform all four tasks together on the text below:
-1) Translation: English → Tamil if the sentence is English; Thanglish → Tamil script if phonetic.
-2) Grammar: Fix tense, agreement, case, sandhi (புணர்ச்சி) errors.
-3) Tone: Apply requested tone (formal | neutral | friendly | media/news); default formal.
-4) Spelling: Fix Tamil spelling, including phonetic mistakes and regional variants.
+  return `You are Thamly, a Tamil correction engine.
 
-Mode: ${mode}. Keep meaning faithful.
+TASKS (ALL REQUIRED):
+1) Translation (English → Tamil, Tanglish → Tamil script).
+2) Grammar correction (tense, agreement, case, sandhi).
+3) Tone application (${tone || "formal"}).
+4) Tamil spelling correction.
 
-Return ONLY valid JSON:
+${GLOBAL_CONSTRAINTS}
+
+Return ONLY this JSON:
 {
-  "best": "Final Tamil sentence",
-  "translation": "If applied; else empty",
-  "grammar": "Grammar fix or empty",
-  "tone": "Applied tone",
-  "spelling": "Spelling fix or empty",
-  "score": 0-100,
-  "hint": "Short rationale in English"
+  "best": "Final corrected Tamil sentence only",
+  "translation": "Tamil translation or empty string",
+  "grammar": "Short grammar fix note or empty string",
+  "tone": "${tone || "formal"}",
+  "spelling": "Short spelling fix note or empty string",
+  "score": 0,
+  "hint": "Short English rationale (max 8 words)"
 }
 
-Rules:
-- No character-by-character Tamil from English words.
-- Keep meaning intact; do not invent facts.
-- Use honorific verbs when tone=formal/media and context demands respect.
-- Keep code/URLs in English as-is.
+RULES:
+- Output must be pure Tamil in "best".
+- Never invent facts.
+- Never output markdown.
+- If input is already correct, copy it to "best".
+- Score logic:
+  90–100 → minor or no changes
+  70–89 → grammar/tone fixes
+  <70 → major correction
 
-Input: "${text}"
-Tone: "${tone || "formal"}"`
+Input:
+"${text}"`
 }
