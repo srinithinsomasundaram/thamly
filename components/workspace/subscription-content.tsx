@@ -405,9 +405,13 @@ export function SubscriptionPageContent({ embedded = false }: { embedded?: boole
             </Badge>
           </CardHeader>
           <CardContent className="space-y-3">
-            <div className="text-2xl font-semibold text-[#0f2c21]">
-              {trialActive ? "₹0 (trial)" : isPro ? "₹1/mo" : "₹0"}
-            </div>
+            {trialActive && <div className="text-2xl font-semibold text-[#0f2c21]">₹0 (trial)</div>}
+            {isPro && !trialActive && <div className="text-2xl font-semibold text-[#0f2c21]">₹1/mo</div>}
+            {!isPro && !trialActive && (
+              <p className="text-sm font-semibold text-[#0f2c21]">
+                Upgrade to Pro to unlock unlimited checks, News Mode, and priority support.
+              </p>
+            )}
             {trialStart && trialEnd && (
               <p className="text-sm text-[#42584a]">
                 Trial: {trialStart.toLocaleDateString()} to {trialEnd.toLocaleDateString()}

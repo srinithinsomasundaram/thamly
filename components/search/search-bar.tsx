@@ -126,7 +126,7 @@ export function SearchBar() {
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           onFocus={() => query.trim() && setIsOpen(true)}
-          className="pl-10 pr-4 bg-gray-50 border-gray-200 focus:bg-white focus:border-teal-500 focus:ring-teal-500 transition-all-smooth"
+          className="pl-10 pr-4 bg-gray-50 border-gray-200 focus:bg-white focus:border-teal-500 focus:ring-teal-500 transition-all-smooth text-[#0f2c21] placeholder:text-gray-400"
         />
         {isLoading && (
           <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
@@ -200,6 +200,26 @@ export function SearchBar() {
                   </div>
                 </button>
               ))}
+            </div>
+          )}
+
+          {/* Quick actions */}
+          {user && (
+            <div className="border-t border-gray-100 bg-gray-50">
+              <p className="px-4 pt-3 pb-2 text-xs font-semibold text-gray-600 uppercase tracking-wide">
+                Quick actions
+              </p>
+              <div className="flex flex-wrap gap-2 px-4 pb-3">
+                <Button size="sm" variant="outline" className="border-gray-200 text-[#0f2c21]" onClick={() => router.push('/drafts')}>
+                  Open drafts
+                </Button>
+                <Button size="sm" variant="outline" className="border-gray-200 text-[#0f2c21]" onClick={() => router.push('/trash')}>
+                  View trash
+                </Button>
+                <Button size="sm" variant="outline" className="border-gray-200 text-[#0f2c21]" onClick={() => router.push('/editor?new=1')}>
+                  New draft
+                </Button>
+              </div>
             </div>
           )}
         </div>
