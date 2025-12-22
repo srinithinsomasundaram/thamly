@@ -1,6 +1,7 @@
 import { buildTranslationPrompt } from "../../../lib/ai/prompts"
 import { generateNewsEnhancements } from "../../../lib/ai/news-enhancer"
 import { callGeminiWithFallback } from "@/lib/gemini"
+import { sanitizeReason } from "@/lib/ai/output"
 import { createClient } from "@/lib/supabase/server"
 
 export async function POST(req: Request) {
@@ -48,7 +49,7 @@ export async function POST(req: Request) {
       // Return mock data for demo
       return Response.json({
         translation: tone === "friendly" ? "எப்படி இருக்கே?" : "எப்படி இருக்கிறீர்கள்?",
-        reason: `Mock translation (${tone}${mode === "news" ? ", news mode" : ""})`,
+        reason: sanitizeReason(),
       })
     }
 
@@ -74,12 +75,12 @@ export async function POST(req: Request) {
 
       return Response.json({
         translation: translation,
-        reason: parsed.reason || "",
+        reason: sanitizeReason(parsed.reason),
         tone: parsed.tone || tone,
       })
     }
 
-    return Response.json({ translation: "", reason: "" })
+    return Response.json({ translation: "", reason: sanitizeReason() })
   } catch (error) {
     console.error("Translation error:", error)
     return Response.json({ error: "Failed to translate" }, { status: 500 })

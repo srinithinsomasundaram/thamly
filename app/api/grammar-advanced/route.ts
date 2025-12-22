@@ -1,5 +1,6 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { callGeminiWithFallback } from "@/lib/gemini"
+import { SAFE_TAMIL_REASON } from "@/lib/ai/output"
 
 export async function POST(request: NextRequest) {
   try {
@@ -17,6 +18,14 @@ export async function POST(request: NextRequest) {
 
     const { data, model } = await callGeminiWithFallback(
       `You are an expert Tamil grammar teacher who provides clear, educational corrections. 
+
+GLOBAL CONSTRAINTS (MANDATORY):
+- Output MUST be valid minified JSON only.
+- Do NOT use markdown, backticks, comments, or explanations outside JSON.
+- Do NOT include trailing commas.
+- Do NOT repeat input text unless required by schema.
+- If unsure, return the safest minimal valid output per schema.
+- Never hallucinate facts.
 
 For each grammar error found, provide:
 1. "original" - the incorrect word/phrase
@@ -39,6 +48,7 @@ Example format:
   "score": 85
 }
 
+The "overallFeedback" MUST be a short Tamil sentence (max 8 words).
 Return ONLY the JSON object. Provide detailed Tamil explanations that help learners understand the "why" behind each correction.
 
 Analyze this Tamil text for grammar errors: "${text}". 
@@ -69,7 +79,7 @@ Return ONLY the JSON object in the format specified.`,
       return NextResponse.json({
         correctedText: text,
         corrections: [],
-        overallFeedback: "Unable to analyze text at this time.",
+        overallFeedback: SAFE_TAMIL_REASON,
         score: 0,
       })
     }
