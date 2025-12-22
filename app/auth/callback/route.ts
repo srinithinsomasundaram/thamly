@@ -5,7 +5,7 @@ import type { CookieSerializeOptions } from "cookie"
 
 export async function GET(request: NextRequest) {
   const requestUrl = new URL(request.url)
-  const next = requestUrl.searchParams.get("next") || "/drafts"
+  const next = "/drafts"
 
   const cookieStore = await cookies()
 
