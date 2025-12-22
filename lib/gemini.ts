@@ -9,8 +9,9 @@ export const GEMINI_FALLBACK_MODELS = [
 ] as const
 
 export const defaultGenConfig = {
-  temperature: 0.4,
-  maxOutputTokens: 512,
+  temperature: 0.2,
+  topP: 0.9,
+  maxOutputTokens: 256,
 }
 
 type GeminiResult = {
