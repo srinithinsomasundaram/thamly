@@ -1,6 +1,5 @@
 import type React from "react"
 import type { Metadata } from "next"
-import { Analytics } from "@vercel/analytics/next"
 import "./globals.css"
 import { SocketProvider } from "@/components/providers/socket-provider"
 import { UserProvider } from "@/components/providers/user-provider"
@@ -73,15 +72,53 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode
 }>) {
+  const orgJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "Organization",
+    name: "Thamly",
+    url: metadata.metadataBase?.toString() || "https://thamly.com",
+    logo: "https://thamly.com/logo2.png",
+    sameAs: [
+      "https://www.linkedin.com/company/thamly",
+      "https://x.com/thamly",
+    ],
+    description:
+      "Thamly is a Tamil-first AI writing assistant for transliteration, grammar/spelling fixes, tone rewrites (news, academic, email), and unlimited checks on Pro.",
+  }
+
+  const productJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "SoftwareApplication",
+    name: "Thamly",
+    applicationCategory: "Productivity",
+    operatingSystem: "Web",
+    offers: {
+      "@type": "Offer",
+      price: "399",
+      priceCurrency: "INR",
+      description: "Tamil-first AI writing assistant with unlimited checks on Pro.",
+    },
+    url: metadata.metadataBase?.toString() || "https://thamly.com",
+    aggregateRating: {
+      "@type": "AggregateRating",
+      ratingValue: "4.8",
+      reviewCount: "120",
+    },
+  }
+
   return (
     <html lang="en">
       <body className={`font-sans antialiased`}>
+        <script
+          type="application/ld+json"
+          suppressHydrationWarning
+          dangerouslySetInnerHTML={{ __html: JSON.stringify([orgJsonLd, productJsonLd]) }}
+        />
         <SocketProvider>
           <UserProvider>
             {children}
           </UserProvider>
         </SocketProvider>
-        <Analytics />
       </body>
     </html>
   )

@@ -170,7 +170,8 @@ export default function ContactPage() {
                 Response times
               </div>
               <p className="mt-2">We reply within one business day. For urgent issues, include your workspace ID.</p>
-             
+              <p className="mt-2 text-xs text-[#0f7a5c]">
+              </p>
             </div>
 
             <div className="rounded-[20px] border border-[#dfe9dd] bg-white px-4 py-3 text-sm text-[#42584a] shadow-inner shadow-[#dfe9dd]/50">

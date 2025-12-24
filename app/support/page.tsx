@@ -10,21 +10,21 @@ export default function SupportPage() {
   const supportChannels = [
     {
       title: "Ask product questions",
-      description: "support@thamly.app · Chat with our crew for product demos and onboarding help.",
+      description: "hello@thamly.in · Chat with our crew for product demos and onboarding help.",
       action: "Email support",
-      href: "mailto:support@thamly.app",
+      href: "mailto:hello@thamly.in",
     },
     {
       title: "Billing or upgrade help",
-      description: "support@thamly.com · Fast responses for plans, invoices, and Pro upgrades.",
+      description: "hello@thamly.in · Fast responses for plans, invoices, and Pro upgrades.",
       action: "Contact billing",
-      href: "mailto:support@thamly.com",
+      href: "mailto:hello@thamly.in",
     },
     {
       title: "Need urgent help?",
       description: "Message our team anytime with workspace ID and we’ll route to on-call engineers.",
       action: "Message support",
-      href: "mailto:support@thamly.app",
+      href: "mailto:hello@thamly.in",
     },
   ]
 

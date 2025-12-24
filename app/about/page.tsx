@@ -3,6 +3,8 @@
 import Link from "next/link"
 import { Sparkles, Shield, Users, PenSquare, Globe } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import { LandingNavbar } from "@/components/layout/landing-navbar"
+import { Footer } from "@/components/layout/footer"
 
 const highlights = [
   { icon: <Sparkles className="h-5 w-5 text-emerald-600" />, title: "Tamil-first AI", desc: "Built for Tamil, Tanglish, and bilingual writers with context-aware rewrites." },
@@ -21,6 +23,7 @@ const stats = [
 export default function AboutPage() {
   return (
     <div className="min-h-screen bg-white text-[#0f2c21]">
+      <LandingNavbar />
       <div className="relative overflow-hidden border-b border-[#dfe9dd] bg-gradient-to-br from-[#f4fffa] via-white to-[#f2fbf6]">
         <div className="absolute inset-0">
           <div className="absolute -left-32 top-10 h-80 w-80 rounded-full bg-emerald-200/25 blur-3xl" />
@@ -123,6 +126,7 @@ export default function AboutPage() {
           </div>
         </div>
       </div>
+      <Footer />
     </div>
   )
 }

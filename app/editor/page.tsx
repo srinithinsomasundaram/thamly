@@ -137,6 +137,8 @@ function EditorContent() {
   const [trialBanner, setTrialBanner] = useState<string | null>(null)
   const [streakDays, setStreakDays] = useState<number>(0)
   const [streakReward, setStreakReward] = useState<string | null>(null)
+  const [isNewsSwitching, setIsNewsSwitching] = useState(false)
+  const [newsSwitchStep, setNewsSwitchStep] = useState("Initializing Newsroom Draft…")
   const { toast } = useToast()
   const saveTimerRef = useRef<NodeJS.Timeout | null>(null)
   const realtimeBroadcastRef = useRef<NodeJS.Timeout | null>(null)
@@ -916,6 +918,50 @@ const refreshCollaboration = useCallback(async (draftId: string) => {
     }
   }, [canEditDraft, content, currentDraftId, mode, modeSupported, router, title])
 
+  const createNewsDraft = useCallback(async () => {
+    if (isNewsSwitching) return null
+    setIsNewsSwitching(true)
+    setNewsSwitchStep("Switching to Newsroom Draft…")
+    try {
+      const res = await fetch("/api/news/draft", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          title: title ? `${title} — News` : "News Draft",
+          sourceDraftId: currentDraftId,
+        }),
+      })
+      if (!res.ok) {
+        const detail = await res.text().catch(() => "")
+        throw new Error(detail || "Failed to create news draft")
+      }
+      const data = await res.json()
+      setNewsSwitchStep("Opening newsroom workspace…")
+      const newId = data?.id as string
+      const newContent = data?.content || ""
+      const newTitle = data?.draft?.title || title || "News Draft"
+      setMode("news")
+      setContent(newContent)
+      setTitle(newTitle)
+      setCurrentDraftId(newId)
+      persistStoredMode(newId, "news")
+      router.replace(`/editor?id=${newId}&new=1`)
+      setLastSaved(new Date())
+      setLastModeToasted("news")
+      return newId
+    } catch (err) {
+      console.error("News draft creation failed", err)
+      toast({
+        title: "News Mode unavailable",
+        description: "Could not create a newsroom draft. Try again in a moment.",
+        variant: "destructive",
+      })
+      return null
+    } finally {
+      setTimeout(() => setIsNewsSwitching(false), 600)
+    }
+  }, [currentDraftId, isNewsSwitching, router, title, toast])
+
   // Manual save via Cmd/Ctrl+S
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
@@ -1039,6 +1085,13 @@ const refreshCollaboration = useCallback(async (draftId: string) => {
         background: "radial-gradient(circle at 20% 20%, rgba(148, 163, 184, 0.12), transparent 35%), radial-gradient(circle at 80% 10%, rgba(52, 211, 153, 0.12), transparent 30%), linear-gradient(120deg, #f8fafc 0%, #f5f7fb 40%, #f8fafc 100%)",
       }}
     >
+      {isNewsSwitching && (
+        <div className="fixed inset-0 z-50 flex flex-col items-center justify-center gap-3 bg-white/85 backdrop-blur-sm">
+          <div className="h-11 w-11 animate-spin rounded-full border-2 border-emerald-500 border-t-transparent" />
+          <p className="text-sm font-semibold text-[#0f2c21]">Switching to Newsroom Draft…</p>
+          <p className="text-xs text-[#42584a]">{newsSwitchStep}</p>
+        </div>
+      )}
       <div className="mx-auto flex min-h-[80vh] w-full max-w-7xl flex-col rounded-3xl">
         {collabBannerMessage && (
           <div className="mb-3 flex items-center gap-2 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-800">
@@ -1202,11 +1255,15 @@ const refreshCollaboration = useCallback(async (draftId: string) => {
               onModeToggle={() => {
                 if (editorReadOnly) return
                 const nextMode = mode === "news" ? "standard" : "news"
-                if (nextMode === "news" && isFreeTier) {
-                  toast({
-                    title: "You’re writing great!",
-                    description: "To keep unlimited corrections and News Mode, upgrade to Pro 💚",
-                  })
+                if (nextMode === "news") {
+                  if (isFreeTier) {
+                    toast({
+                      title: "You’re writing great!",
+                      description: "To keep unlimited corrections and News Mode, upgrade to Pro 💚",
+                    })
+                  }
+                  createNewsDraft()
+                  return
                 }
                 setMode(nextMode)
                 persistStoredMode(currentDraftId, nextMode)

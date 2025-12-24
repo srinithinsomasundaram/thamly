@@ -12,7 +12,7 @@ export async function POST(request: NextRequest) {
     const apiKey = process.env.GEMINI_API_KEY
 
     if (!apiKey) {
-      return NextResponse.json({ error: "Gemini API key not configured" }, { status: 500 })
+      return NextResponse.json({ spellingErrors: [], info: "AI spelling unavailable" }, { status: 200 })
     }
 
     const { data, model } = await callGeminiWithFallback(
@@ -44,7 +44,7 @@ Text to check: "${text}"`,
     const content = data.candidates?.[0]?.content?.parts?.[0]?.text
 
     if (!content) {
-      return NextResponse.json({ error: "AI service unavailable" }, { status: 503 })
+      return NextResponse.json({ spellingErrors: [], info: "AI service unavailable" }, { status: 200 })
     }
 
     try {
@@ -58,6 +58,6 @@ Text to check: "${text}"`,
     }
   } catch (error) {
     console.error("Spelling check error:", error)
-    return NextResponse.json({ error: "Failed to check spelling" }, { status: 500 })
+    return NextResponse.json({ spellingErrors: [], info: "Failed to check spelling" }, { status: 200 })
   }
 }

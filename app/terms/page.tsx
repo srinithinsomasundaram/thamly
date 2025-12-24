@@ -49,7 +49,7 @@ export default function TermsPage() {
             We may update these terms. Continued use after updates means acceptance.
           </Section>
           <Section title="8. Contact">
-            Email us at <Link href="mailto:hello@thamly.com" className="text-[#0f7a5c] hover:text-[#0c6148]">hello@thamly.com</Link> for questions.
+            Email us at <Link href="mailto:hello@thamly.in" className="text-[#0f7a5c] hover:text-[#0c6148]">hello@thamly.in</Link> for questions.
           </Section>
         </div>
       </main>

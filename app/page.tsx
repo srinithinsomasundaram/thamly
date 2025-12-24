@@ -362,6 +362,60 @@ export default function Home() {
           </div>
         </section>
 
+        {/* SEO-rich overview + FAQ */}
+        <section className="px-6">
+          <div className="mx-auto max-w-6xl space-y-10 rounded-3xl border border-[#dfe9dd] bg-white/90 p-8 shadow-[0_20px_60px_rgba(15,23,42,0.08)]">
+            <div className="grid gap-8 lg:grid-cols-[1.4fr_1fr]">
+              <div className="space-y-4">
+                <h2 className="text-3xl font-bold text-[#0f2c21]">
+                  Tamil grammar checker, Tanglish transliteration, and newsroom tone in one tool.
+                </h2>
+                <p className="text-lg text-[#42584a]">
+                  Thamly is a Tamil-first AI writing platform that fixes grammar and spelling, converts Tanglish to pure
+                  Tamil, and applies formal, academic, or news tone in seconds. Students, reporters, bloggers, and
+                  teams use Thamly to keep Tamil content clear, accurate, and culturally correct.
+                </p>
+                <div className="grid gap-3 sm:grid-cols-2">
+                  {[
+                    "Tamil grammar checker with AI",
+                    "Tanglish to Tamil transliteration",
+                    "Tamil news rewrite & headline mode",
+                    "Formal and academic Tamil tone",
+                    "Private: your drafts stay yours",
+                    "Fast previews, no credit card needed",
+                  ].map((item) => (
+                    <div key={item} className="flex items-start gap-2 text-sm text-[#0f2c21]">
+                      <Check className="mt-0.5 h-4 w-4 text-teal-600" />
+                      <span>{item}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div className="space-y-4 rounded-2xl border border-[#dfe9dd] bg-[#f7faf7] p-5">
+                <div className="text-sm font-semibold uppercase tracking-[0.2em] text-[#0f7a5c]">FAQ</div>
+                <div className="space-y-3 text-sm text-[#0f2c21]">
+                  <div>
+                    <p className="font-semibold">Can Thamly convert English or Tanglish to Tamil?</p>
+                    <p className="text-[#42584a]">Yes. Thamly translates English and Tanglish to clean, natural Tamil without phonetic garbage.</p>
+                  </div>
+                  <div>
+                    <p className="font-semibold">Does it support news writing?</p>
+                    <p className="text-[#42584a]">News Mode edits sentence-by-sentence, keeps neutral tone, and can suggest headlines.</p>
+                  </div>
+                  <div>
+                    <p className="font-semibold">Is my content private?</p>
+                    <p className="text-[#42584a]">Drafts stay in your workspace; previews don’t store text. You control what’s saved.</p>
+                  </div>
+                  <div>
+                    <p className="font-semibold">Can I try without a card?</p>
+                    <p className="text-[#42584a]">Yes. Start free—no credit card is needed to test Tamil grammar and transliteration.</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
 
     {/* Final CTA Section */}
         <section className="relative px-6 overflow-hidden">
@@ -458,7 +512,12 @@ export default function Home() {
                   hello@thamly.in
                 </a>
               </div>
-          
+              <div className="flex items-center gap-3">
+                <Phone className="h-5 w-5 text-teal-600" />
+                <a href="mailto:hello@thamly.in" className="hover:text-teal-600 transition-colors">
+                  hello@thamly.in
+                </a>
+              </div>
             </div>
           </div>
         </section>

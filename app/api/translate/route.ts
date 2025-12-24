@@ -12,37 +12,6 @@ export async function POST(req: Request) {
       return Response.json({ error: "Text is required" }, { status: 400 })
     }
 
-    // Gate news mode for Pro/trial users only
-    if (mode === "news") {
-      const supabase = await createClient()
-      const {
-        data: { user },
-      } = await supabase.auth.getUser()
-
-      if (!user) {
-        return Response.json({ error: "News mode requires Pro" }, { status: 403 })
-      }
-
-      const { data: profile } = await supabase
-        .from("profiles")
-        .select("subscription_tier, is_trial_active, trial_ends_at, trial_used, trial_started_at")
-        .eq("id", user.id)
-        .maybeSingle()
-
-      const tier = (profile?.subscription_tier || "free").toLowerCase()
-      const isPro = tier === "pro"
-      const now = new Date()
-      const trialEnd = profile?.trial_ends_at ? new Date(profile.trial_ends_at) : null
-      const trialStart = profile?.trial_started_at ? new Date(profile.trial_started_at) : null
-      const isTrial =
-        Boolean(profile?.is_trial_active && trialEnd && now <= trialEnd) ||
-        (profile?.trial_used && trialStart && trialEnd && now <= trialEnd && tier !== "pro")
-
-      if (!isPro && !isTrial) {
-        return Response.json({ error: "News mode requires Pro" }, { status: 403 })
-      }
-    }
-
     const apiKey = process.env.GEMINI_API_KEY
 
     if (!apiKey) {

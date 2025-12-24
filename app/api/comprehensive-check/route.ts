@@ -6,6 +6,10 @@ import { SAFE_TAMIL_REASON, sanitizeReason } from "@/lib/ai/output"
 import { getInstantSuggestions } from "@/lib/tamil-transliterator"
 
 const isPureTamil = (text: string) => /^[\u0B80-\u0BFF\s.,?!]+$/.test(text || "")
+const isInvalidOutput = (text: string) =>
+  /(ஹெண்|யொஉர்|ஸப்டி|ணே\s|wஹெண்|birthday\?|see this|suggestion|இதை சிறப்பாக மாற்றுகிறேன்|இந்த வாசகம்)/i.test(
+    text || "",
+  )
 
 const cleanJson = (text: string) =>
   (text || "")
@@ -101,10 +105,8 @@ function detectReason(input: string, corrected: string) {
 }
 
 function buildGrammarResult(input: string, parsed: any) {
-  const corrected =
-    parsed?.best && typeof parsed.best === "string" && isPureTamil(parsed.best)
-      ? parsed.best.trim()
-      : input
+  const candidate = parsed?.best && typeof parsed.best === "string" ? parsed.best.trim() : ""
+  const corrected = candidate && isPureTamil(candidate) && !isInvalidOutput(candidate) ? candidate : input
 
   const reason =
     parsed?.reason && typeof parsed.reason === "string" && isPureTamil(parsed.reason)

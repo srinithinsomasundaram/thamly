@@ -23,6 +23,7 @@ export default function SignUpPage() {
   const [fullName, setFullName] = useState("")
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState("")
+  const [success, setSuccess] = useState("")
   const { user, loading: userLoading } = useUserProfile()
 
   useEffect(() => {
@@ -35,9 +36,28 @@ export default function SignUpPage() {
     e.preventDefault()
     setLoading(true)
     setError("")
+    setSuccess("")
+
+    // Pre-check if email already exists
+    try {
+      const res = await fetch("/api/auth/check-email", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email }),
+      })
+      const data = await res.json()
+      if (res.ok && data?.exists) {
+        setError("That email is already registered. Please use a different email or sign in.")
+        setLoading(false)
+        return
+      }
+    } catch (err) {
+      console.error("Email check failed", err)
+      // allow flow to continue; sign-up will still validate
+    }
 
     const supabase = createClient()
-    const { error } = await supabase.auth.signUp({
+    const { data, error } = await supabase.auth.signUp({
       email,
       password,
       options: {
@@ -46,21 +66,40 @@ export default function SignUpPage() {
     })
 
     if (error) {
-      setError(error.message)
+      const msg = (error.message || "").toLowerCase()
+      if (
+        error.status === 400 ||
+        msg.includes("already registered") ||
+        msg.includes("user already registered") ||
+        msg.includes("already exists")
+      ) {
+        setError("That email is already registered. Please use a different email or sign in.")
+      } else {
+        setError(error.message)
+      }
       setLoading(false)
       return
     }
 
-    // Start trial automatically (best activation)
-    try {
-      await fetch("/api/trial/start", { method: "POST" })
-    } catch (err) {
-      console.error("Trial start after signup failed", err)
-    }
+    // For email/password signups, Supabase sends a confirmation link.
+    // Show confirmation message instead of redirecting immediately.
+    const recipient = data?.user?.email || email
+    setSuccess(`A verification link has been sent to ${recipient}. Please verify and then sign in.`)
+
+    // Best-effort welcome email (non-blocking)
+    fetch("/api/email/welcome", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email: recipient, name: fullName }),
+    })
+      .then(() =>
+        supabase.auth.updateUser({
+          data: { welcome_v1_sent: true, full_name: fullName },
+        }),
+      )
+      .catch(() => {})
 
     setLoading(false)
-    router.replace(redirectTo)
-    router.refresh()
   }
 
   if (!userLoading && user) {
@@ -163,6 +202,12 @@ export default function SignUpPage() {
                   <div className="flex items-start gap-2 rounded-md border border-red-400/40 bg-red-50 px-3 py-2 text-sm text-red-800">
                     <AlertCircle className="h-4 w-4 shrink-0" />
                     <p>{error}</p>
+                  </div>
+                )}
+                {success && (
+                  <div className="flex items-start gap-2 rounded-md border border-emerald-400/40 bg-emerald-50 px-3 py-2 text-sm text-emerald-800">
+                    <AlertCircle className="h-4 w-4 shrink-0 text-emerald-600" />
+                    <p>{success}</p>
                   </div>
                 )}
 

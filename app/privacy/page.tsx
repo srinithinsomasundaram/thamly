@@ -43,13 +43,13 @@ export default function PrivacyPage() {
             We use essential cookies for authentication and session management.
           </Section>
           <Section title="6. Your rights">
-            Request export or deletion of your data by emailing <Link href="mailto:hello@thamly.com" className="text-[#0f7a5c] hover:text-[#0c6148]">hello@thamly.com</Link>.
+            Request export or deletion of your data by emailing <Link href="mailto:hello@thamly.in" className="text-[#0f7a5c] hover:text-[#0c6148]">hello@thamly.in</Link>.
           </Section>
           <Section title="7. Updates">
             We may update this policy. Continued use after updates means acceptance.
           </Section>
           <Section title="8. Contact">
-            Questions? Email <Link href="mailto:hello@thamly.com" className="text-[#0f7a5c] hover:text-[#0c6148]">hello@thamly.com</Link>.
+            Questions? Email <Link href="mailto:hello@thamly.in" className="text-[#0f7a5c] hover:text-[#0c6148]">hello@thamly.in</Link>.
           </Section>
         </div>
       </main>

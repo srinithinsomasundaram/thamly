@@ -167,11 +167,11 @@ export default function HelpPage() {
               <span>Quick actions</span>
             </div>
             <div className="space-y-2 text-sm text-[#42584a]">
-              <Link href="mailto:support@thamly.app" className="flex items-center gap-2 rounded-xl border border-[#dfe9dd] bg-[#f7faf7] px-4 py-3 font-semibold text-[#0f2c21] hover:border-[#0f7a5c] hover:text-[#0f7a5c]">
+              <Link href="mailto:hello@thamly.in" className="flex items-center gap-2 rounded-xl border border-[#dfe9dd] bg-[#f7faf7] px-4 py-3 font-semibold text-[#0f2c21] hover:border-[#0f7a5c] hover:text-[#0f7a5c]">
                 <MessageCircle className="h-4 w-4 text-[#0f7a5c]" />
                 Email support — 1 business day
               </Link>
-              <Link href="mailto:support@thamly.app?subject=Feature%20request" className="flex items-center gap-2 rounded-xl border border-[#dfe9dd] bg-[#f7faf7] px-4 py-3 font-semibold text-[#0f2c21] hover:border-[#0f7a5c] hover:text-[#0f7a5c]">
+              <Link href="mailto:hello@thamly.in?subject=Feature%20request" className="flex items-center gap-2 rounded-xl border border-[#dfe9dd] bg-[#f7faf7] px-4 py-3 font-semibold text-[#0f2c21] hover:border-[#0f7a5c] hover:text-[#0f7a5c]">
                 <Sparkles className="h-4 w-4 text-[#0f7a5c]" />
                 Request a feature
               </Link>
@@ -195,7 +195,7 @@ export default function HelpPage() {
             <div className="flex flex-wrap justify-center gap-3 text-sm text-[#42584a]">
               <span className="inline-flex items-center gap-2 rounded-full border border-[#dfe9dd] bg-[#f7faf7] px-3 py-1">
                 <MessageCircle className="h-4 w-4 text-[#0f7a5c]" />
-                support@thamly.app
+                hello@thamly.in
               </span>
             </div>
           </div>

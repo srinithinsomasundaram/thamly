@@ -25,6 +25,30 @@ const articles = [
     readTime: "6 min read",
     href: "/articles/academic-writing-tamil",
   },
+  {
+    title: "Tamil AI Writing Tool: Grammar, Spelling, and Transliteration",
+    summary: "How to use Thamly’s Tamil grammar checker, spelling fixes, and Tanglish-to-Tamil transliteration for clean copy.",
+    readTime: "5 min read",
+    href: "/articles/tamil-ai-writing-tool",
+  },
+  {
+    title: "Tamil News Writing AI: Headlines, Tone, and Clarity",
+    summary: "A newsroom-ready checklist for Tamil journalists: neutral tone, tight headlines, and sentence-by-sentence edits.",
+    readTime: "5 min read",
+    href: "/articles/tamil-news-writing-ai",
+  },
+  {
+    title: "How to Check Tamil Grammar Online Using AI",
+    summary: "Step-by-step guide to using a Tamil grammar checker and AI proofreader for clean, error-free Tamil writing.",
+    readTime: "5 min read",
+    href: "/articles/how-to-check-tamil-grammar-online",
+  },
+  {
+    title: "How to Type Tamil Without a Tamil Keyboard",
+    summary: "Use Tamil typing AI and transliteration to write Tamil anywhere—no keyboard layouts needed.",
+    readTime: "4 min read",
+    href: "/articles/how-to-type-tamil-without-keyboard",
+  },
 ]
 
 export default function ArticlesPage() {
