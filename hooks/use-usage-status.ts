@@ -2,6 +2,7 @@
 
 import { useMemo } from "react"
 import { useUserProfile } from "@/components/providers/user-provider"
+import { USAGE_LIMITS } from "@/lib/constants"
 
 export type UsageStatus = {
   usage: number
@@ -34,18 +35,21 @@ export function useUsageStatus(): UsageStatus {
       (profile?.is_trial_active && trialEnd && now <= trialEnd) ||
       (profile?.trial_used && trialStart && trialEnd && now <= trialEnd && tier !== "pro")
 
-    const isUnlimited = tier !== "free" || trialActive
+    const limit = tier === "free" && !trialActive ? USAGE_LIMITS.free : Infinity
+    const remaining = Number.isFinite(limit) ? Math.max(0, limit - usage) : Infinity
+    const isUnlimited = !Number.isFinite(limit)
+    const percentage = Number.isFinite(limit) && limit > 0 ? Math.min(100, (usage / limit) * 100) : 0
     const label = trialActive
       ? "Trial Pro · Unlimited"
       : isUnlimited
         ? "Unlimited"
-        : "Limited"
+        : `${remaining} left`
 
     return {
       usage,
-      limit: Infinity,
-      remaining: Infinity,
-      percentage: 0,
+      limit,
+      remaining,
+      percentage,
       label,
       tier,
       isUnlimited,
