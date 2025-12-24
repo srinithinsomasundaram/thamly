@@ -15,7 +15,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ ok: false, error: "SMTP not configured" }, { status: 500 })
     }
 
-    const siteUrl ="https://thamly.com"
+    const siteUrl ="https://thamly.in"
 
     const editorUrl = `${siteUrl}/editor`
     const draftsUrl = `${siteUrl}/drafts`
