@@ -162,7 +162,7 @@ export async function POST(req: Request) {
       const sentences = text
         .split(/[\n\.!?]+/)
         .map((s: string) => s.trim())
-        .filter((s): s is string => Boolean(s))
+        .filter((s: string): s is string => Boolean(s))
       const isNonNews = (s: string) =>
         /(வணக்கம்|ஹலோ|hello|hi|how are|ok|சரி|தயவு செய்து|thanks|நன்றி)/i.test(s)
       const nonNews = sentences.filter(isNonNews)
@@ -238,7 +238,13 @@ export async function POST(req: Request) {
       })
       .filter(
         (
-          item,
+          item: {
+            type: string
+            from: string
+            to: string
+            reason: string
+            confidence: number
+          } | null,
         ): item is {
           type: string
           from: string
