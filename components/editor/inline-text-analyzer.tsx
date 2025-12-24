@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react"
 import { useEditor } from "@tiptap/react"
+import { useUsageStatus } from "@/hooks/use-usage-status"
 
 interface TextIssue {
   id: string
@@ -28,6 +29,7 @@ export function InlineTextAnalyzer({
   onTextSelection,
   analyzeImmediately
 }: InlineTextAnalyzerProps) {
+  const usageStatus = useUsageStatus()
   const [isAnalyzing, setIsAnalyzing] = useState(false)
   const [analysisTimeout, setAnalysisTimeout] = useState<NodeJS.Timeout | null>(null)
   const [highlightedIssues, setHighlightedIssues] = useState<TextIssue[]>([])
@@ -41,6 +43,7 @@ export function InlineTextAnalyzer({
 
   // Analyze full content when typing stops
   const analyzeFullContent = async () => {
+    if (!usageStatus.isUnlimited && usageStatus.remaining <= 0) return
     if (!content.trim() || content.length < 10) return
 
     setIsAnalyzing(true)
@@ -129,6 +132,7 @@ export function InlineTextAnalyzer({
 
   // Analyze selected text immediately
   const analyzeSelection = async () => {
+    if (!usageStatus.isUnlimited && usageStatus.remaining <= 0) return
     if (!selectedText.trim()) return
 
     try {

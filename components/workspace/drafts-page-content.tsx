@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react"
 import { useRouter } from "next/navigation"
-import { Newspaper, PlayCircle, Search } from "lucide-react"
+import { Newspaper, PlayCircle, Search, Mic } from "lucide-react"
 import { AppShell } from "@/components/layout/app-shell"
 import { createClient } from "@/lib/supabase/client"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -112,19 +112,11 @@ export function DraftPageContent({ embedded = false }: { embedded?: boolean }) {
 
       const announcements = [
         {
-          key: "welcome_v1",
-          title: "👋 Welcome to Thamly",
-          body: "Start with a fresh draft or spin up a newsroom draft when you switch modes.",
-          bullets: ["Use News Draft for formal newsroom tone", "Tanglish/English auto-cleanup as you type"],
-          ctaLabel: "Create a draft",
-        },
-        {
-          key: "whatsnew_2025_01",
-          title: "✨ What’s new",
-          body: "News Mode now uses sentence-by-sentence editing and no-change detection.",
-          bullets: ["News drafts open in a dedicated workspace", "English stays in English until you translate"],
-          ctaLabel: "See updates",
-          ctaUrl: "/articles/writing-for-newsrooms",
+          key: "whatsnew_voice_2025_02",
+          title: "New: Voice to Text",
+          body: "Speak in English or Tamil — Thamly types it instantly. Edit, rewrite, or convert it using AI.",
+          bullets: ["🆓 Free: 30 seconds per voice", "💎 Pro: Up to 5 minutes per voice"],
+          ctaLabel: "Try Voice Typing",
         },
       ]
 
@@ -214,31 +206,26 @@ export function DraftPageContent({ embedded = false }: { embedded?: boolean }) {
 
   const content = (
     <div className="flex-1 space-y-6 p-8 pt-6">
-      {activeAnnouncement && (
-        <div className="rounded-2xl border border-emerald-100 bg-emerald-50 px-4 py-3 shadow-sm">
-          <div className="flex items-start justify-between gap-3">
-            <div className="space-y-1">
-              <div className="flex items-center gap-2">
-                <Badge variant="outline" className="border-emerald-200 text-emerald-700 bg-white/70">
-                  New
-                </Badge>
-                <p className="text-sm font-semibold text-[#0f2c21]">{activeAnnouncement.title}</p>
-              </div>
-              <p className="text-sm text-[#42584a]">{activeAnnouncement.body}</p>
-              {activeAnnouncement.bullets && (
-                <ul className="mt-1 space-y-1 text-xs text-[#42584a] list-disc list-inside">
-                  {activeAnnouncement.bullets.map((b) => (
-                    <li key={b}>{b}</li>
-                  ))}
-                </ul>
-              )}
-            </div>
-            <div className="flex items-start gap-2">
-              {activeAnnouncement.ctaLabel && (
-                <Button
-                  size="sm"
-                  className="bg-[#0f7a5c] text-white hover:bg-[#0c6148]"
-                  onClick={() => {
+          {activeAnnouncement && (
+            <div className="relative overflow-hidden rounded-2xl border border-[#c7f0d8] bg-gradient-to-br from-white via-[#f7fff9] to-[#e6f7ee] p-4 shadow-[0_10px_40px_rgba(15,122,92,0.08)]">
+              <div className="absolute -left-10 top-2 h-24 w-24 rounded-full bg-emerald-100 blur-3xl" aria-hidden="true" />
+              <div className="absolute -right-16 -bottom-10 h-32 w-32 rounded-full bg-emerald-50 blur-3xl" aria-hidden="true" />
+              <div className="relative flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+                <div className="space-y-2">
+                  <div className="inline-flex items-center gap-2 rounded-full bg-emerald-600/10 px-3 py-1 text-xs font-semibold text-emerald-800">
+                    <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
+                    <Mic className="h-3 w-3 text-emerald-700" />
+                    New · Voice to Text
+                  </div>
+                  <p className="text-base font-semibold text-[#0b2d23]">{activeAnnouncement.title}</p>
+                  <p className="text-sm text-[#2f4f40]">{activeAnnouncement.body}</p>
+                </div>
+                <div className="flex items-center gap-2 self-start">
+                  {activeAnnouncement.ctaLabel && (
+                    <Button
+                      size="sm"
+                      className="bg-[#0f7a5c] text-white hover:bg-[#0c6148] shadow-sm"
+                      onClick={() => {
                     if (activeAnnouncement.ctaUrl) {
                       router.push(activeAnnouncement.ctaUrl)
                     } else {
@@ -252,15 +239,16 @@ export function DraftPageContent({ embedded = false }: { embedded?: boolean }) {
                 </Button>
               )}
               <Button
-                size="sm"
+                size="icon"
                 variant="ghost"
                 className="text-slate-600 hover:text-slate-900"
                 onClick={() => {
                   markAnnouncementSeen(activeAnnouncement.key)
                   setActiveAnnouncement(null)
                 }}
+                aria-label="Dismiss"
               >
-                Dismiss
+                ×
               </Button>
             </div>
           </div>

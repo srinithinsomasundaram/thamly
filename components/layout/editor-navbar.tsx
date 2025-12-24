@@ -97,7 +97,9 @@ export function EditorNavbar({ saveStatus = "idle" }: { saveStatus?: "idle" | "s
   }, [router])
 
   const usageStatus = useUsageStatus()
-  const usageDisplay = usageStatus.isUnlimited ? "Unlimited" : `${usageStatus.usage} checks`
+  const usageDisplay = usageStatus.isUnlimited
+    ? "Unlimited"
+    : `${usageStatus.usage}/${usageStatus.limit} checks`
 
   if (isLoading) {
     return (
@@ -182,7 +184,7 @@ export function EditorNavbar({ saveStatus = "idle" }: { saveStatus?: "idle" | "s
             </span>
           </div>
           <div className="text-xs text-muted-foreground">
-            Usage: {usageStatus.isUnlimited ? "Unlimited" : `${usageStatus.usage} checks`}
+            Usage: {usageStatus.isUnlimited ? "Unlimited" : `${usageStatus.usage}/${usageStatus.limit} today`}
           </div>
 
           {/* Upgrade button */}
