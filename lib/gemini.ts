@@ -3,10 +3,10 @@ const PERPLEXITY_URL = "https://api.perplexity.ai/chat/completions"
 const DEFAULT_PERPLEXITY_MODEL = process.env.PERPLEXITY_MODEL || "llama-3.1-sonar-large-128k-online"
 
 export const GEMINI_FALLBACK_MODELS = [
+  "gemini-2.0-flash",
   "gemini-2.5-pro",
   "gemini-2.5-flash",
   "gemini-2.5-flash-lite",
-  "gemini-2.0-flash",
   "gemini-2.0-flash-lite",
 ] as const
 
