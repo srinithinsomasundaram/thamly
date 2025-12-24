@@ -49,6 +49,12 @@ const articles = [
     readTime: "4 min read",
     href: "/articles/how-to-type-tamil-without-keyboard",
   },
+  {
+    title: "Tamil Voice to Text: Dictate in Tamil with AI",
+    summary: "Use Tamil voice-to-text AI to transcribe speech into clean Tamil, fix grammar, and apply news or formal tone.",
+    readTime: "4 min read",
+    href: "/articles/tamil-voice-to-text-ai",
+  },
 ]
 
 export default function ArticlesPage() {
