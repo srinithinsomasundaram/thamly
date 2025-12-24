@@ -15,6 +15,10 @@ export function SocketProvider({ children }: { children: React.ReactNode }) {
   const [connected, setConnected] = useState(false)
   const socket = useMemo(() => getSocket(), [])
 
+  if (!socket) {
+    return <>{children}</>
+  }
+
   useEffect(() => {
     if (!socket) return
 

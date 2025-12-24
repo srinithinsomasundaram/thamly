@@ -549,10 +549,7 @@ export function SubscriptionPageContent({ embedded = false }: { embedded?: boole
                       </a>
                     </Button>
                   ) : (
-                    <Link
-                      href="mailto:hello@thamly.com?subject=Invoice%20copy%20request"
-                      className="text-xs font-semibold text-[#0f7a5c] hover:text-[#0c6148]"
-                    >
+                    <Link href="mailto:hello@thamly.in?subject=Invoice%20copy%20request" className="text-xs font-semibold text-[#0f7a5c] hover:text-[#0c6148]">
                       Request copy
                     </Link>
                   )}

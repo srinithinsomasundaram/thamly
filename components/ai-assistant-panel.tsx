@@ -355,28 +355,19 @@ export function AIAssistantPanel({
             if (comprehensiveData.success && comprehensiveData.result) {
               const result = comprehensiveData.result
 
-              // Only add grammar/spelling cards for non-English selections
-      if (selectedLang !== "eng") {
-        const mappedType =
-          result.type === 'tamil-spelling' ? 'spelling' :
-          result.type === 'grammar' ? 'grammar' :
-          result.type === 'spelling' ? 'spelling' : 'improvement'
-
-        if (tryConsume(mappedType)) {
-          transformedSuggestions.push({
-            id: `comprehensive-${Date.now()}-${Math.random()}`,
-            type: result.type === 'tamil-spelling' ? 'tamil-spelling' :
-                  result.type === 'grammar' ? 'grammar' :
-                  result.type === 'spelling' ? 'spelling' : 'improvement',
-            title: result.type === 'tamil-spelling' ? 'Tamil Spelling Correction' :
-                  result.type === 'grammar' ? 'Grammar Correction' :
-                  result.type === 'spelling' ? 'Spelling Correction' : 'Improvement',
-            original: result.original,
-            suggested: Array.isArray(result.suggestions) ? result.suggestions.join(", ") : result.suggestions || result.suggested || "",
-            reason: sanitizeReason(result.reason) || reasonForType(mappedType),
-          })
-        }
-      }
+              if (result.type === "grammar" || result.type === "spelling" || result.type === "tamil-spelling") {
+                const mappedType = "grammar"
+                if (tryConsume(mappedType)) {
+                  transformedSuggestions.push({
+                    id: `comprehensive-${Date.now()}-${Math.random()}`,
+                    type: "grammar",
+                    title: "Tamil Suggestion",
+                    original: result.original,
+                    suggested: result.corrected || result.suggested || "",
+                    reason: sanitizeReason(result.reason) || reasonForType(mappedType),
+                  })
+                }
+              }
 
               // Always offer translation for English/Thanglish selections
               if (selectedLang === "eng" || selectedLang === "thanglish" || selectedLang === "mixed") {
