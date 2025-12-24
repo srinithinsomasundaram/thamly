@@ -15,10 +15,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ ok: false, error: "SMTP not configured" }, { status: 500 })
     }
 
-    const siteUrl =
-      process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, "") ||
-      process.env.VERCEL_PROJECT_PRODUCTION_URL?.replace(/\/$/, "") ||
-      "https://thamly.com"
+    const siteUrl ="https://thamly.com"
 
     const editorUrl = `${siteUrl}/editor`
     const draftsUrl = `${siteUrl}/drafts`
