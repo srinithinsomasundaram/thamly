@@ -617,9 +617,50 @@ const refreshCollaboration = useCallback(async (draftId: string) => {
     }
   }
 
+  const applyContentWithBroadcast = (compute: (current: string) => string) => {
+    setContent((prev) => {
+      const next = compute(prev)
+      if (!editorReadOnly && canEditDraft && !applyingRemoteRef.current) {
+        broadcastContent(next)
+      }
+      return next
+    })
+  }
+
+  const applySuggestionToContent = (base: string, suggestion: AISuggestion, selectionText: string) => {
+    const replacement = suggestion.suggested
+    if (!replacement) return base
+
+    // Prefer explicit highlight range when available
+    if (suggestion.highlight && typeof suggestion.highlight.start === "number" && typeof suggestion.highlight.end === "number") {
+      const { start, end } = suggestion.highlight
+      if (start >= 0 && end > start && end <= base.length) {
+        return base.slice(0, start) + replacement + base.slice(end)
+      }
+    }
+
+    // Replace first matching original text if present
+    if (suggestion.original) {
+      const idx = base.indexOf(suggestion.original)
+      if (idx !== -1) {
+        return base.slice(0, idx) + replacement + base.slice(idx + suggestion.original.length)
+      }
+    }
+
+    // Fallback to current selection if it still exists in content
+    if (selectionText && base.includes(selectionText)) {
+      const idx = base.indexOf(selectionText)
+      return base.slice(0, idx) + replacement + base.slice(idx + selectionText.length)
+    }
+
+    // Final fallback: return replacement as full content
+    return replacement
+  }
+
   const handleApplyAISuggestion = (suggestion: AISuggestion) => {
     if (editorReadOnly) return
     if (!suggestion?.suggested) return
+    const activeSelection = selectedText?.trim() || ""
     const fallbackTranslate = (text: string) => {
       const map: Record<string, string> = {
         ok: "சரி",
@@ -639,33 +680,17 @@ const refreshCollaboration = useCallback(async (draftId: string) => {
 
     const safeDefault = () => "இதை சிறப்பாக மாற்றுகிறேன்"
 
-    const selection = selectedText?.trim()
-    let replacement = suggestion.suggested
+    const baseReplacement = (() => {
+      if (!activeSelection) return suggestion.suggested
+      const tooShort = suggestion.suggested.length < Math.max(activeSelection.length * 0.5, activeSelection.length - 4)
+      if (!tooShort) return suggestion.suggested
+      const mapped = fallbackTranslate(activeSelection)
+      return mapped !== activeSelection ? mapped : safeDefault()
+    })()
 
-    if (selection) {
-      const tooShort = replacement.length < Math.max(selection.length * 0.5, selection.length - 4)
-      if (tooShort) {
-        const mapped = fallbackTranslate(selection)
-        replacement = mapped !== selection ? mapped : safeDefault()
-      }
-    }
-
-    let nextContent = replacement
-
-    // If user selected text, only replace that portion to keep the rest intact
-    if (selection && content.includes(selection)) {
-      const idx = content.indexOf(selection)
-      if (idx >= 0) {
-        nextContent = content.slice(0, idx) + replacement + content.slice(idx + selection.length)
-      }
-    } else if (suggestion.highlight && typeof suggestion.highlight.start === "number" && typeof suggestion.highlight.end === "number") {
-      const { start, end } = suggestion.highlight
-      if (start >= 0 && end > start && end <= content.length) {
-        nextContent = content.slice(0, start) + replacement + content.slice(end)
-      }
-    }
-
-    updateContent(nextContent)
+    applyContentWithBroadcast((current) =>
+      applySuggestionToContent(current, { ...suggestion, suggested: baseReplacement }, activeSelection)
+    )
     setAcceptedCount((prev) => prev + 1)
     setSelectedText("")
     setSelectedTextVersion((prev) => prev + 1)
