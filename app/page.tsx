@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react"
 import Link from "next/link"
-import { ArrowRight, Check, ChevronRight, Lock, Sparkles, Star, Zap, Shield, Users, Globe, FileText, BarChart, Mail, Phone, MapPin } from "lucide-react"
+import { ArrowRight, Check, ChevronRight, Lock, Sparkles, Star, Zap, Shield, Users, Globe, FileText, BarChart, Mail, Phone, MapPin, Mic } from "lucide-react"
 
 import { LandingNavbar } from "@/components/layout/landing-navbar"
 import { Button } from "@/components/ui/button"
@@ -19,6 +19,24 @@ const featurePillars = [
   { title: "Smart Transliteration", detail: "Type English → pick pure Tamil." },
   { title: "Rewrite Modes", detail: "Formal, News, Academic, Casual, Clear tone templates." },
   { title: "AI Assistant", detail: "One suggestion box for tone, clarity, grammar." },
+]
+
+const whatsNewItems = [
+  {
+    icon: Mic,
+    title: "Voice-to-text",
+    desc: "Dictate in English or Tanglish; get clean Tamil script with grammar fixes.",
+  },
+  {
+    icon: Sparkles,
+    title: "Smarter grammar",
+    desc: "Better agreement, sandhi, and spelling corrections for news-style Tamil.",
+  },
+  {
+    icon: Shield,
+    title: "Private previews",
+    desc: "Live demo stays local—no text stored while you test.",
+  },
 ]
 
 const demoSamples = [
@@ -92,8 +110,8 @@ export default function Home() {
                 </span>
               </h1>
               <p className="mx-auto max-w-4xl text-xl text-[#42584a] sm:text-2xl leading-relaxed">
-                Transform your Tamil writing with AI-powered grammar correction, intelligent transliteration,
-                tone adjustment, and professional rewriting tools. Built for students, professionals, and creators.
+                Transform your Tamil writing with an online Tamil grammar checker, Tamil spelling correction, voice-to-text dictation,
+                intelligent transliteration, tone adjustment, and professional rewriting tools. Built for students, professionals, and creators.
               </p>
             </div>
 
@@ -165,6 +183,7 @@ export default function Home() {
                   <span className="rounded-full border border-[#dfe9dd] bg-white/80 px-3 py-1">Preview-only</span>
                   <span className="rounded-full border border-[#dfe9dd] bg-white/80 px-3 py-1">Tamil-first UX</span>
                   <span className="rounded-full border border-[#dfe9dd] bg-white/80 px-3 py-1">No typing needed</span>
+                  <span className="rounded-full border border-[#dfe9dd] bg-white/80 px-3 py-1">Voice-to-text ready</span>
                 </div>
               </div>
 
@@ -216,6 +235,53 @@ export default function Home() {
           </div>
         </section>
 
+        {/* What's New */}
+        <section className="px-6">
+          <div className="mx-auto max-w-6xl">
+            <div className="rounded-[28px] border border-[#dfe9dd] bg-white/90 p-8 shadow-[0_18px_50px_rgba(15,23,42,0.08)]">
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <div className="space-y-2">
+                  <div className="inline-flex items-center gap-2 rounded-full border border-teal-200/60 bg-teal-50/80 px-3 py-1 text-xs font-semibold uppercase tracking-[0.28em] text-[#0f7a5c]">
+                    <Sparkles className="h-4 w-4" />
+                    <span>What&apos;s new</span>
+                  </div>
+                  <h2 className="text-2xl font-bold text-[#0f2c21] sm:text-3xl">Voice-to-text and smarter grammar</h2>
+                  <p className="text-sm text-[#42584a]">
+                    Fresh updates for Tamil writers: dictate faster, get cleaner grammar, and keep your previews private.
+                  </p>
+                </div>
+                <Link
+                  href="/auth/sign-up?redirectTo=/drafts"
+                  className="inline-flex items-center gap-2 rounded-full border border-[#dfe9dd] bg-[#0f7a5c] px-4 py-2 text-sm font-semibold text-white shadow-lg shadow-[#0f7a5c]/30 transition hover:bg-[#0c6148]"
+                >
+                  Try the new updates
+                  <ArrowRight className="h-4 w-4" />
+                </Link>
+              </div>
+
+              <div className="mt-6 grid gap-3 md:grid-cols-3">
+                {whatsNewItems.map((item) => (
+                  <div
+                    key={item.title}
+                    className="flex items-start gap-3 rounded-2xl border border-[#dfe9dd] bg-[#f7faf7] p-4 shadow-sm"
+                  >
+                    <div className="relative flex h-10 w-10 items-center justify-center rounded-2xl bg-[#0f7a5c]/10 text-[#0f7a5c]">
+                      {item.title === "Voice-to-text" && (
+                        <span className="absolute -inset-1 rounded-2xl bg-[#0f7a5c]/15 animate-ping" aria-hidden />
+                      )}
+                      <item.icon className="h-5 w-5" />
+                    </div>
+                    <div className="space-y-1">
+                      <p className="text-sm font-semibold text-[#0f2c21]">{item.title}</p>
+                      <p className="text-xs text-[#42584a]">{item.desc}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </section>
+
         {/* Features Showcase */}
         <section className="px-6">
           <div className="mx-auto max-w-7xl space-y-12">
@@ -232,18 +298,24 @@ export default function Home() {
                 </span>
               </h2>
               <p className="mx-auto max-w-3xl text-xl text-[#42584a]">
-                From grammar correction to tone adjustment, our AI-powered tools help you write better Tamil content faster.
+                From online Tamil grammar checks to spelling correction and tone adjustment, our AI-powered tools help you write better Tamil content faster.
               </p>
             </div>
 
             {/* Feature cards */}
-            <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-4">
+            <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-5">
               {[
                 {
                   icon: Check,
                   title: "Grammar & Spelling",
-                  description: "Advanced AI catches complex Tamil grammar errors, spelling mistakes, and punctuation issues instantly.",
+                  description: "Advanced AI catches complex Tamil grammar errors, spelling mistakes, and punctuation issues instantly—your online Tamil grammar checker and spelling correction tool.",
                   gradient: "from-teal-500 to-emerald-500"
+                },
+                {
+                  icon: Mic,
+                  title: "Voice-to-Text",
+                  description: "Dictate in English or Tanglish and get clean Tamil script with grammar and spelling fixes applied automatically.",
+                  gradient: "from-emerald-600 to-teal-500"
                 },
                 {
                   icon: Globe,
@@ -272,7 +344,13 @@ export default function Home() {
                   <div className={`absolute -right-4 -top-4 h-24 w-24 rounded-full bg-gradient-to-br ${feature.gradient} opacity-10 blur-2xl transition-opacity group-hover:opacity-20`} />
 
                   {/* Icon */}
-                  <div className={`inline-flex rounded-2xl bg-gradient-to-br ${feature.gradient} p-3 text-white shadow-lg`}>
+                  <div className={`relative inline-flex rounded-2xl bg-gradient-to-br ${feature.gradient} p-3 text-white shadow-lg`}>
+                    {feature.title === "Voice-to-Text" && (
+                      <span
+                        className="pointer-events-none absolute -inset-1 rounded-2xl bg-gradient-to-br from-emerald-600/25 to-teal-500/25 animate-ping"
+                        aria-hidden
+                      />
+                    )}
                     <feature.icon className="h-6 w-6" />
                   </div>
 

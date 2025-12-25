@@ -56,11 +56,11 @@ export default function TamilVoiceToTextAIPage() {
             <p className="text-xs font-semibold uppercase tracking-[0.3em] text-[#0f7a5c]">Try this</p>
             <p className="text-sm font-semibold text-[#0f2c21]">Dictate this in English or Tanglish:</p>
             <p className="rounded-xl border border-[#dfe9dd] bg-white px-4 py-3 text-sm text-[#42584a]">
-              “draft a tamil news update about heavy rain in chennai, keep it formal”
+              “Draft a Tamil news update about heavy rain in Chennai; keep it formal.”
             </p>
             <p className="text-sm font-semibold text-[#0f2c21]">Thamly returns (Tamil script):</p>
             <p className="rounded-xl border border-[#dfe9dd] bg-white px-4 py-3 text-sm text-[#0f2c21]">
-              “சென்னையில் கனமழை காரணமாக நிலைமைகள் பாதிக்கப்பட்டுள்ளன. அதிகாரிகள் தேவையான முன்னெச்சரிக்கை நடவடிக்கைகளை அறிவித்துள்ளனர்.”
+              “சென்னையில் பெய்து வரும் கனமழை குறித்த தமிழ் செய்திக்குறிப்பை இணைக்கவும், அதை முறையானதாக வைத்திருக்கவும்.”
             </p>
             <p className="text-xs text-[#42584a]">Neutral/news tone applied; grammar and spelling cleaned automatically.</p>
           </div>
